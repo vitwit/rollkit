@@ -38,12 +38,14 @@ func (h *handler) wsHandler(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 
 	wsc, err := upgrader.Upgrade(w, r, nil)
-	remoteAddr := wsc.RemoteAddr().String()
 	if err != nil {
-		h.logger.Error("failed to update to WebSocket connection", "error", err, "address", remoteAddr)
+		h.logger.Error("failed to update to WebSocket connection", "error", err)
 	}
 	defer func() {
 		err := wsc.Close()
@@ -51,6 +53,7 @@ func (h *handler) wsHandler(w http.ResponseWriter, r *http.Request) {
 			h.logger.Error("failed to close WebSocket connection", "err")
 		}
 	}()
+	remoteAddr := wsc.RemoteAddr().String()
 
 	ws := &wsConn{
 		conn:  wsc,
