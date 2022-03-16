@@ -66,6 +66,4 @@ jobs:
       - name: Build
         run: |
           pwd
-          ./build-image.sh 
-        with: 
-          image_tag: ${{ steps.meta.outputs.tags[0] }}
+          ./build-image.sh ${{ steps.meta.outputs.tags }}
