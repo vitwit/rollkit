@@ -34,16 +34,16 @@ jobs:
         with:
           repository: celestiaorg/ethermint
           path: ethermint
-      - name: "Checkout source code"
-        uses: "actions/checkout@v2"
       - name: Clone ephemeral-cluster repo
         uses: actions/checkout@v2
         with:
           repository: celestiaorg/ephemeral-cluster
           path: ephemeral-cluster
           ref: jbowen93/evmos
+      - name: "Checkout source code"
+        uses: "actions/checkout@v2"
       - name: Log
-        run: tree
+        run: cd .. && tree
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
