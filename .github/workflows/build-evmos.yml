@@ -22,6 +22,8 @@ jobs:
       contents: write 
       packages: write 
     steps:
+      - name: "Checkout source code"
+        uses: "actions/checkout@v2"
       - name: up a level
         run: cd .. && pwd
       - name: Clone evmos repo
@@ -40,8 +42,6 @@ jobs:
           repository: celestiaorg/ephemeral-cluster
           path: ephemeral-cluster
           ref: jbowen93/evmos
-      - name: "Checkout source code"
-        uses: "actions/checkout@v2"
       - name: Log
         run: cd .. && tree
       - name: Docker meta
