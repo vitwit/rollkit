@@ -5,6 +5,8 @@ arch=$(uname -p)
 
 WORKDIR=$PWD
 
+cd .. 
+
 # Setup Ethermint
 cp -R optimint ethermint
 cd ethermint
