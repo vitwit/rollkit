@@ -22,6 +22,8 @@ jobs:
       contents: write 
       packages: write 
     steps:
+      - name: up a level
+        run: cd ..
       - name: Clone evmos repo
         uses: actions/checkout@v2
         with:
