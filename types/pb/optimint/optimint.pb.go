@@ -5,8 +5,8 @@ package optimint
 
 import (
 	fmt "fmt"
+	abci "github.com/celestiaorg/optimint/types/pb/tendermint/abci"
 	proto "github.com/gogo/protobuf/proto"
-	types "github.com/tendermint/tendermint/abci/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -291,9 +291,9 @@ func (m *Commit) GetSignatures() [][]byte {
 }
 
 type Data struct {
-	Txs                    [][]byte          `protobuf:"bytes,1,rep,name=txs,proto3" json:"txs,omitempty"`
-	IntermediateStateRoots [][]byte          `protobuf:"bytes,2,rep,name=intermediate_state_roots,json=intermediateStateRoots,proto3" json:"intermediate_state_roots,omitempty"`
-	Evidence               []*types.Evidence `protobuf:"bytes,3,rep,name=evidence,proto3" json:"evidence,omitempty"`
+	Txs                    [][]byte         `protobuf:"bytes,1,rep,name=txs,proto3" json:"txs,omitempty"`
+	IntermediateStateRoots [][]byte         `protobuf:"bytes,2,rep,name=intermediate_state_roots,json=intermediateStateRoots,proto3" json:"intermediate_state_roots,omitempty"`
+	Evidence               []*abci.Evidence `protobuf:"bytes,3,rep,name=evidence,proto3" json:"evidence,omitempty"`
 }
 
 func (m *Data) Reset()         { *m = Data{} }
@@ -343,7 +343,7 @@ func (m *Data) GetIntermediateStateRoots() [][]byte {
 	return nil
 }
 
-func (m *Data) GetEvidence() []*types.Evidence {
+func (m *Data) GetEvidence() []*abci.Evidence {
 	if m != nil {
 		return m.Evidence
 	}
@@ -1691,7 +1691,7 @@ func (m *Data) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Evidence = append(m.Evidence, &types.Evidence{})
+			m.Evidence = append(m.Evidence, &abci.Evidence{})
 			if err := m.Evidence[len(m.Evidence)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
