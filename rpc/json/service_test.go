@@ -27,7 +27,7 @@ import (
 	"github.com/celestiaorg/rollmint/config"
 	"github.com/celestiaorg/rollmint/mocks"
 	"github.com/celestiaorg/rollmint/node"
-	"github.com/celestiaorg/rollmint/rpc/client"
+	"github.com/celestiaorg/rollmint/node/client"
 )
 
 func TestHandlerMapping(t *testing.T) {
