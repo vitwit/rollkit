@@ -2,6 +2,7 @@ package block
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -249,7 +250,7 @@ func (m *Manager) SyncLoop(ctx context.Context, cancel context.CancelFunc) {
 			m.retrieveCond.Signal()
 
 			err := m.trySyncNextBlock(ctx, daHeight)
-			if err != nil && err.Error() == fmt.Errorf("failed to ApplyBlock: %w", state.ErrFraudProofGenerated).Error() {
+			if errors.Unwrap(err) == state.ErrFraudProofGenerated {
 				return
 			}
 			if err != nil {

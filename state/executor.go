@@ -22,7 +22,7 @@ import (
 	"github.com/rollkit/rollkit/types"
 )
 
-var ErrFraudProofGenerated = errors.New("failed to ApplyBlock: halting node due to fraud")
+var ErrFraudProofGenerated = errors.New("halting node due to fraud")
 
 // BlockExecutor creates and applies blocks and maintains state.
 type BlockExecutor struct {
