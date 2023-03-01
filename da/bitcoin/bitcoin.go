@@ -43,32 +43,26 @@ func (c *DataAvailabilityLayerClient) Init(namespaceID types.NamespaceID, config
 		return json.Unmarshal(config, &c.config)
 	}
 
-	client, err := rollkitbtc.NewRelayer(rollkitbtc.Config{
+	return nil
+}
+
+// Start prepares DataAvailabilityLayerClient to work.
+func (c *DataAvailabilityLayerClient) Start() error {
+	c.logger.Info("starting Bitcoin Data Availability Client", "Host", c.config.Host)
+	var err error
+	c.client, err = rollkitbtc.NewRelayer(rollkitbtc.Config{
 		Host:         c.config.Host,
 		User:         c.config.User,
 		Pass:         c.config.Pass,
 		HTTPPostMode: c.config.HTTPPostMode,
 		DisableTLS:   c.config.DisableTLS,
 	})
-	if err != nil {
-		return err
-	}
-
-	c.client = client
-
-	return nil
-}
-
-// Start prepares DataAvailabilityLayerClient to work.
-func (c *DataAvailabilityLayerClient) Start() error {
-	c.logger.Info("starting Bitcoin Client", "Host", c.config.Host)
-	var err error
 	return err
 }
 
 // Stop stops DataAvailabilityLayerClient.
 func (c *DataAvailabilityLayerClient) Stop() error {
-	c.logger.Info("stopping Celestia Data Availability Layer Client")
+	c.logger.Info("stopping Bitcoin Data Availability Client")
 	return nil
 }
 

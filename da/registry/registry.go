@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/rollkit/rollkit/da"
+	"github.com/rollkit/rollkit/da/bitcoin"
 	"github.com/rollkit/rollkit/da/celestia"
 	"github.com/rollkit/rollkit/da/grpc"
 	"github.com/rollkit/rollkit/da/mock"
@@ -23,6 +24,7 @@ var clients = map[string]func() da.DataAvailabilityLayerClient{
 	"mock":     func() da.DataAvailabilityLayerClient { return &mock.DataAvailabilityLayerClient{} },
 	"grpc":     func() da.DataAvailabilityLayerClient { return &grpc.DataAvailabilityLayerClient{} },
 	"celestia": func() da.DataAvailabilityLayerClient { return &celestia.DataAvailabilityLayerClient{} },
+	"bitcoin":  func() da.DataAvailabilityLayerClient { return &bitcoin.DataAvailabilityLayerClient{} },
 }
 
 // GetClient returns client identified by name.
