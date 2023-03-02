@@ -186,6 +186,6 @@ require (
 replace (
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
 	github.com/rollkit/rollkit-btc => ../rollkit-btc
-	github.com/tendermint/tendermint => ../tendermint
+	github.com/tendermint/tendermint => github.com/rollkit/tendermint v0.34.22-0.20230301013318-10369c684a5c
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
