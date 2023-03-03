@@ -19,7 +19,7 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.8.3
 	github.com/multiformats/go-multiaddr v0.8.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rollkit/rollkit-btc v0.0.0
+	github.com/rollkit/bitcoin-da v0.0.0
 	github.com/rs/cors v1.8.3
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
@@ -184,8 +184,9 @@ require (
 )
 
 replace (
+	github.com/btcsuite/btcd => ../btcsuite/btcd
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
-	github.com/rollkit/rollkit-btc => ../rollkit-btc
+	github.com/rollkit/bitcoin-da => ../rollkit-btc
 	github.com/tendermint/tendermint => github.com/rollkit/tendermint v0.34.22-0.20230301013318-10369c684a5c
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )

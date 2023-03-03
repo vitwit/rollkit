@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	ds "github.com/ipfs/go-datastore"
 
-	rollkitbtc "github.com/rollkit/rollkit-btc"
+	rollkitbtc "github.com/rollkit/bitcoin-da"
 	"github.com/rollkit/rollkit/da"
 	"github.com/rollkit/rollkit/log"
 	"github.com/rollkit/rollkit/types"
@@ -120,7 +120,21 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 
 // RetrieveBlocks gets a batch of blocks from DA layer.
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
-	data, err := c.client.Read(dataLayerHeight)
+	latestHeight, err := c.client.LatestHeight()
+	if err != nil {
+		return da.ResultRetrieveBlocks{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
+
+	var daHeight uint64
+	if dataLayerHeight > uint64(latestHeight) {
+		daHeight = uint64(latestHeight)
+	}
+	data, err := c.client.Read(daHeight)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
 			BaseResult: da.BaseResult{
