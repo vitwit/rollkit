@@ -53,7 +53,17 @@ func (c *DataAvailabilityLayerClient) Init(namespaceID types.NamespaceID, config
 func (c *DataAvailabilityLayerClient) Start() error {
 	c.logger.Info("starting Bitcoin Data Availability Client", "Host", c.config.Host)
 	var err error
-	c.client, err = rollkitbtc.NewRelayer(rollkitbtc.Config(c.config))
+	c.client, err = rollkitbtc.NewRelayer(
+		rollkitbtc.Config{
+			Host:                c.config.Host,
+			User:                c.config.User,
+			Pass:                c.config.Pass,
+			HTTPPostMode:        c.config.HTTPPostMode,
+			DisableTLS:          c.config.DisableTLS,
+			Network:             c.config.Network,
+			RevealSatAmount:     c.config.RevealSatAmount,
+			RevealPrivateKeyWIF: c.config.RevealPrivateKeyWIF,
+		})
 	return err
 }
 
