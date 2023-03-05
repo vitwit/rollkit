@@ -133,6 +133,8 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 	var daHeight uint64
 	if dataLayerHeight > uint64(latestHeight) {
 		daHeight = uint64(latestHeight)
+	} else {
+		daHeight = dataLayerHeight
 	}
 	data, err := c.client.Read(daHeight)
 	if err != nil {
@@ -149,7 +151,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 		var block pb.Block
 		err = proto.Unmarshal(msg, &block)
 		if err != nil {
-			c.logger.Error("failed to unmarshal block", "daHeight", dataLayerHeight, "position", i, "error", err)
+			c.logger.Error("failed to unmarshal block", "daHeight", daHeight, "position", i, "error", err)
 			continue
 		}
 		blocks[i] = new(types.Block)
