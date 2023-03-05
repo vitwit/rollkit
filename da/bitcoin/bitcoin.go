@@ -27,11 +27,15 @@ var _ da.BlockRetriever = &DataAvailabilityLayerClient{}
 
 // Config stores Celestia DALC configuration parameters.
 type Config struct {
-	Host         string `json:"host"`
-	User         string `json:"user"`
-	Pass         string `json:"pass"`
-	HTTPPostMode bool   `json:"http_post_mode"`
-	DisableTLS   bool   `json:"disable_tls"`
+	Host                string `json:"host"`
+	User                string `json:"user"`
+	Pass                string `json:"pass"`
+	HTTPPostMode        bool   `json:"http_post_mode"`
+	DisableTLS          bool   `json:"disable_tls"`
+	Network             string `json:"network"`
+	RevealSatAmount     int64  `json:"reveal_sat_amount"`
+	RevealSatFee        int64  `json:"reveal_sat_fee"`
+	RevealPrivateKeyWIF string `json:"reveal_private_key_wif"`
 }
 
 // Init initializes DataAvailabilityLayerClient instance.
@@ -50,13 +54,7 @@ func (c *DataAvailabilityLayerClient) Init(namespaceID types.NamespaceID, config
 func (c *DataAvailabilityLayerClient) Start() error {
 	c.logger.Info("starting Bitcoin Data Availability Client", "Host", c.config.Host)
 	var err error
-	c.client, err = rollkitbtc.NewRelayer(rollkitbtc.Config{
-		Host:         c.config.Host,
-		User:         c.config.User,
-		Pass:         c.config.Pass,
-		HTTPPostMode: c.config.HTTPPostMode,
-		DisableTLS:   c.config.DisableTLS,
-	})
+	c.client, err = rollkitbtc.NewRelayer(rollkitbtc.Config(c.config))
 	return err
 }
 
