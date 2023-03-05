@@ -34,7 +34,6 @@ type Config struct {
 	DisableTLS          bool   `json:"disable_tls"`
 	Network             string `json:"network"`
 	RevealSatAmount     int64  `json:"reveal_sat_amount"`
-	RevealSatFee        int64  `json:"reveal_sat_fee"`
 	RevealPrivateKeyWIF string `json:"reveal_private_key_wif"`
 }
 

@@ -981,6 +981,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=
 github.com/rollkit/bitcoin-da v0.0.0-20230305032448-fae44ec801e5 h1:nTt2UiwNI58ltx59J1fiiPoKdg9H6lXl8cvgUA/+4JM=
 github.com/rollkit/bitcoin-da v0.0.0-20230305032448-fae44ec801e5/go.mod h1:d53eH2cvIVn7AXBxa2apX8oK1szdfnXCAqevs96V+xQ=
+github.com/rollkit/bitcoin-da v0.0.0-20230305050200-ad9e6bdcb407 h1:du/jePTul7tPn9ySjG/hXm1JIHZBiASCZ2EVyeBzpnY=
+github.com/rollkit/bitcoin-da v0.0.0-20230305050200-ad9e6bdcb407/go.mod h1:d53eH2cvIVn7AXBxa2apX8oK1szdfnXCAqevs96V+xQ=
 github.com/rollkit/btcd v0.0.0-20230303194602-659dc361684f h1:ALxfffpH4+P7Py/z8JZDTfXeplZTTnfXBpGiWxLgir4=
 github.com/rollkit/btcd v0.0.0-20230303194602-659dc361684f/go.mod h1:FewIyVo3jCTveMYfXOJDGhUNTA6MbxH6pBJdaW/cDro=
 github.com/rollkit/tendermint v0.34.22-0.20230301013318-10369c684a5c h1:iKNBj18AXLTpFMp46OPgd2W8lUerd+YgS3tS9XXPpFg=
