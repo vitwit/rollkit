@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	"github.com/rollkit/rollkit/libs/appconsts"
+	appns "github.com/rollkit/rollkit/libs/namespace"
 	shares "github.com/rollkit/rollkit/libs/shares"
 	pb "github.com/rollkit/rollkit/types/pb/rollkit"
 	"github.com/tendermint/tendermint/crypto/merkle"
@@ -87,6 +89,16 @@ func SharesToPostableBytes(txShares []shares.Share) (postableData []byte, err er
 		postableData = append(postableData, raw...)
 	}
 	return postableData, nil
+}
+
+func PostableBytesToShares(postableData []byte) (txShares []shares.Share, err error) {
+	css := shares.NewCompactShareSplitterWithIsCompactFalse(appns.TxNamespace, appconsts.ShareVersionZero)
+	err = css.WriteWithNoReservedBytes(postableData)
+	if err != nil {
+		return nil, err
+	}
+	shares, _, err := css.Export(0)
+	return shares, err
 }
 
 func SharesToTxsWithISRs(txShares []shares.Share) (txsWithISRs []pb.TxWithISRs, err error) {
