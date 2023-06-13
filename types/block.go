@@ -3,7 +3,7 @@ package types
 import (
 	"encoding"
 
-	tmtypes "github.com/tendermint/tendermint/types"
+	cmtypes "github.com/cometbft/cometbft/types"
 )
 
 type NamespaceID [8]byte
@@ -36,7 +36,7 @@ type Data struct {
 
 // EvidenceData defines how evidence is stored in block.
 type EvidenceData struct {
-	Evidence []Evidence
+	Evidence []cmtypes.Evidence
 }
 
 // Commit contains evidence of block creation.
@@ -50,7 +50,7 @@ type Commit struct {
 type SignedHeader struct {
 	Header
 	Commit     Commit
-	Validators *tmtypes.ValidatorSet
+	Validators *cmtypes.ValidatorSet
 }
 
 // Signature represents signature of block creator.

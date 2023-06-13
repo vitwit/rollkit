@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/log"
+	"github.com/cometbft/cometbft/proxy"
+	"github.com/cometbft/cometbft/types"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/proxy"
-	"github.com/tendermint/tendermint/types"
 
 	"github.com/rollkit/rollkit/config"
 	"github.com/rollkit/rollkit/mempool"
@@ -66,20 +66,20 @@ func TestMempoolDirectly(t *testing.T) {
 
 	pid, err := peer.IDFromPrivateKey(anotherKey)
 	require.NoError(err)
-	err = node.Mempool.CheckTx([]byte("tx1"), func(r *abci.Response) {}, mempool.TxInfo{
+	err = node.Mempool.CheckTx([]byte("tx1"), func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{
 		SenderID: node.mempoolIDs.GetForPeer(pid),
 	})
 	require.NoError(err)
-	err = node.Mempool.CheckTx([]byte("tx2"), func(r *abci.Response) {}, mempool.TxInfo{
+	err = node.Mempool.CheckTx([]byte("tx2"), func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{
 		SenderID: node.mempoolIDs.GetForPeer(pid),
 	})
 	require.NoError(err)
 	time.Sleep(100 * time.Millisecond)
-	err = node.Mempool.CheckTx([]byte("tx3"), func(r *abci.Response) {}, mempool.TxInfo{
+	err = node.Mempool.CheckTx([]byte("tx3"), func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{
 		SenderID: node.mempoolIDs.GetForPeer(pid),
 	})
 	require.NoError(err)
-	err = node.Mempool.CheckTx([]byte("tx4"), func(r *abci.Response) {}, mempool.TxInfo{
+	err = node.Mempool.CheckTx([]byte("tx4"), func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{
 		SenderID: node.mempoolIDs.GetForPeer(pid),
 	})
 	require.NoError(err)

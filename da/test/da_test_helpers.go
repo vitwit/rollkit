@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmlog "github.com/cometbft/cometbft/libs/log"
 	"google.golang.org/grpc"
 
 	cmock "github.com/rollkit/rollkit/da/celestia/mock"

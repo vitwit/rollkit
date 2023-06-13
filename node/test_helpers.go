@@ -1,10 +1,10 @@
 package node
 
 import (
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	"github.com/cometbft/cometbft/p2p"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/libp2p/go-libp2p/core/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/p2p"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/rollkit/rollkit/conv"
 )

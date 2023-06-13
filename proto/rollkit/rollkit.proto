@@ -1,7 +1,7 @@
 syntax = "proto3";
 package rollkit;
 option go_package = "github.com/rollkit/rollkit/types/pb/rollkit";
-import "tendermint/types/validator.proto";
+import "cometbft/types/validator.proto";
 
 // Version captures the consensus rules for processing a block in the blockchain,
 // including all blockchain data structures and the rules of the application's
@@ -63,7 +63,7 @@ message Commit {
 message SignedHeader {
 	Header header = 1;
 	Commit commit = 2;
-	tendermint.types.ValidatorSet validators = 3;
+	cometbft.types.ValidatorSet validators = 3;
 }
 
 message Data {

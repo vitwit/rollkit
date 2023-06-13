@@ -35,15 +35,15 @@ We don't need to introduce common interface `Node`s, because the plan is to use 
 - Pros:
   - May be possible to avoid Tendermint issues
   - Should be possible to avoid dependency on Tendermint in Rollkit
-  - Changes probably limited to cosmos-sdk (not required in tendermint/lazyledger-core)
+  - Changes probably limited to cosmos-sdk (not required in cometbft/lazyledger-core)
 - Cons:
   - Reinventing the wheel
   - Requires bigger, much more complicated changes in cosmos-sdk
   - Probably can't upstream such changes to cosmos-sdk
 
-## `tendermint` vs `lazyledger-core`
+## `cometbft` vs `lazyledger-core`
 
-Right now, either `tendermint` or `lazyledger-core` can be used for base types (including interfaces).
+Right now, either `cometbft` or `lazyledger-core` can be used for base types (including interfaces).
 Similarly, vanilla `cosomos-sdk` (not a fork under lazyledger organization) can be used as a base for ORU client.
 `lazyledger-core` is a repository created because of needs related to lazyledger client, not optimistic rollups client.
 On the other hand, some of the functionality will be shared between both clients. This will have to be resolved later in time.

@@ -1,4 +1,4 @@
 coverage.txt
 proto/pb
-proto/tendermint
-types/pb/tendermint
+proto/cometbft
+types/pb/cometbft

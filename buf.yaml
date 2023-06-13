@@ -21,7 +21,7 @@ lint:
     - SERVICE_SUFFIX
     - UNARY_RPC
   ignore:
-    - tendermint
+    - cometbft
 breaking:
   use:
     - FILE

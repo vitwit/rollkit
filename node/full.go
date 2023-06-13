@@ -14,20 +14,19 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/multierr"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	llcfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/service"
-	corep2p "github.com/tendermint/tendermint/p2p"
-	proxy "github.com/tendermint/tendermint/proxy"
-	tmtypes "github.com/tendermint/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	llcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/libs/log"
+	"github.com/cometbft/cometbft/libs/service"
+	corep2p "github.com/cometbft/cometbft/p2p"
+	proxy "github.com/cometbft/cometbft/proxy"
+	tmtypes "github.com/cometbft/cometbft/types"
 
 	"github.com/rollkit/rollkit/block"
 	"github.com/rollkit/rollkit/config"
 	"github.com/rollkit/rollkit/da"
 	"github.com/rollkit/rollkit/da/registry"
 	"github.com/rollkit/rollkit/mempool"
-	mempoolv1 "github.com/rollkit/rollkit/mempool/v1"
 	"github.com/rollkit/rollkit/p2p"
 	"github.com/rollkit/rollkit/state/indexer"
 	blockidxkv "github.com/rollkit/rollkit/state/indexer/block/kv"
@@ -102,7 +101,7 @@ func newFullNode(
 	genesis *tmtypes.GenesisDoc,
 	logger log.Logger,
 ) (*FullNode, error) {
-	proxyApp := proxy.NewAppConns(clientCreator)
+	proxyApp := proxy.NewAppConns(clientCreator, proxy.NopMetrics())
 	proxyApp.SetLogger(logger.With("module", "proxy"))
 	if err := proxyApp.Start(); err != nil {
 		return nil, fmt.Errorf("error starting proxy app connections: %v", err)
@@ -150,12 +149,12 @@ func newFullNode(
 		return nil, err
 	}
 
-	mp := mempoolv1.NewTxMempool(logger, llcfg.DefaultMempoolConfig(), proxyApp.Mempool(), 0)
+	mp := mempool.NewCListMempool(llcfg.DefaultMempoolConfig(), proxyApp.Mempool(), 0)
 	mpIDs := newMempoolIDs()
 	mp.EnableTxsAvailable()
 
 	doneBuildingChannel := make(chan struct{})
-	blockManager, err := block.NewManager(signingKey, conf.BlockManagerConfig, genesis, s, mp, proxyApp.Consensus(), dalc, eventBus, logger.With("module", "BlockManager"), doneBuildingChannel)
+	blockManager, err := block.NewManager(signingKey, conf.BlockManagerConfig, genesis, s, mp, proxyApp, dalc, eventBus, logger.With("module", "BlockManager"), doneBuildingChannel)
 	if err != nil {
 		return nil, fmt.Errorf("BlockManager initialization error: %w", err)
 	}
@@ -337,8 +336,8 @@ func (n *FullNode) AppClient() proxy.AppConns {
 func (n *FullNode) newTxValidator() p2p.GossipValidator {
 	return func(m *p2p.GossipMessage) bool {
 		n.Logger.Debug("transaction received", "bytes", len(m.Data))
-		checkTxResCh := make(chan *abci.Response, 1)
-		err := n.Mempool.CheckTx(m.Data, func(resp *abci.Response) {
+		checkTxResCh := make(chan *abci.ResponseCheckTx, 1)
+		err := n.Mempool.CheckTx(m.Data, func(resp *abci.ResponseCheckTx) {
 			checkTxResCh <- resp
 		}, mempool.TxInfo{
 			SenderID:    n.mempoolIDs.GetForPeer(m.From),
@@ -355,8 +354,7 @@ func (n *FullNode) newTxValidator() p2p.GossipValidator {
 			return false
 		default:
 		}
-		res := <-checkTxResCh
-		checkTxResp := res.GetCheckTx()
+		checkTxResp := <-checkTxResCh
 
 		return checkTxResp.Code == abci.CodeTypeOK
 	}
@@ -381,7 +379,7 @@ func createAndStartIndexerService(
 	txIndexer = kv.NewTxIndex(ctx, kvStore)
 	blockIndexer = blockidxkv.New(ctx, newPrefixKV(kvStore, "block_events"))
 
-	indexerService := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus)
+	indexerService := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus, false)
 	indexerService.SetLogger(logger.With("module", "txindex"))
 
 	if err := indexerService.Start(); err != nil {

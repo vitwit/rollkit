@@ -3,10 +3,10 @@ package node
 import (
 	"context"
 
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	"github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/libs/bytes"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/cometbft/cometbft/types"
 )
 
 var _ rpcclient.Client = &LightClient{}
@@ -28,31 +28,31 @@ func (c *LightClient) ABCIInfo(ctx context.Context) (*ctypes.ResultABCIInfo, err
 }
 
 // ABCIQuery queries for data from application.
-func (c *LightClient) ABCIQuery(ctx context.Context, path string, data tmbytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
+func (c *LightClient) ABCIQuery(ctx context.Context, path string, data bytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
 	panic("Not implemented")
 }
 
 // ABCIQueryWithOptions queries for data from application.
-func (c *LightClient) ABCIQueryWithOptions(ctx context.Context, path string, data tmbytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
+func (c *LightClient) ABCIQueryWithOptions(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
 	panic("Not implemented")
 }
 
 // BroadcastTxCommit returns with the responses from CheckTx and DeliverTx.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_commit
+// More: https://docs.cometbft.com/master/rpc/#/Tx/broadcast_tx_commit
 func (c *LightClient) BroadcastTxCommit(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	panic("Not implemented")
 }
 
 // BroadcastTxAsync returns right away, with no response. Does not wait for
 // CheckTx nor DeliverTx results.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_async
+// More: https://docs.cometbft.com/master/rpc/#/Tx/broadcast_tx_async
 func (c *LightClient) BroadcastTxAsync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 	panic("Not implemented")
 }
 
 // BroadcastTxSync returns with the response from CheckTx. Does not wait for
 // DeliverTx result.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_sync
+// More: https://docs.cometbft.com/master/rpc/#/Tx/broadcast_tx_sync
 func (c *LightClient) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 	panic("Not implemented")
 }
@@ -176,5 +176,13 @@ func (c *LightClient) UnconfirmedTxs(ctx context.Context, limitPtr *int) (*ctype
 //
 // If valid, the tx is automatically added to the mempool.
 func (c *LightClient) CheckTx(ctx context.Context, tx types.Tx) (*ctypes.ResultCheckTx, error) {
+	panic("Not implemented")
+}
+
+func (c *LightClient) Header(ctx context.Context, height *int64) (*ctypes.ResultHeader, error) {
+	panic("Not implemented")
+}
+
+func (c *LightClient) HeaderByHash(ctx context.Context, hash bytes.HexBytes) (*ctypes.ResultHeader, error) {
 	panic("Not implemented")
 }

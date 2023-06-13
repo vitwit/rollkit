@@ -4,13 +4,23 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strconv"
-	"strings"
 
-	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/types"
+	"github.com/google/orderedcode"
 
+	"github.com/cometbft/cometbft/libs/pubsub/query/syntax"
+	"github.com/cometbft/cometbft/types"
+
+	"github.com/rollkit/rollkit/state/indexer"
 	"github.com/rollkit/rollkit/store"
 )
+
+type HeightInfo struct {
+	heightRange     indexer.QueryRange
+	height          int64
+	heightEqIdx     int
+	onlyHeightRange bool
+	onlyHeightEq    bool
+}
 
 func intInSlice(a int, list []int) bool {
 	for _, b := range list {
@@ -33,34 +43,95 @@ func int64ToBytes(i int64) []byte {
 	return buf[:n]
 }
 
-func heightKey(height int64) string {
-	return store.GenerateKey([]interface{}{types.BlockHeightKey, height})
+func heightKey(height int64) ([]byte, error) {
+	return orderedcode.Append(
+		nil,
+		types.BlockHeightKey,
+		height,
+	)
 }
 
 func eventKey(compositeKey, typ, eventValue string, height int64) string {
 	return store.GenerateKey([]interface{}{compositeKey, eventValue, height, typ})
 }
 
-func parseValueFromPrimaryKey(key string) (int64, error) {
-	parts := strings.SplitN(key, "/", 3)
-	height, err := strconv.ParseInt(parts[2], 10, 64)
+func parseValueFromPrimaryKey(key []byte) (string, error) {
+	var (
+		compositeKey string
+		height       int64
+	)
+
+	remaining, err := orderedcode.Parse(string(key), &compositeKey, &height)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse event key: %w", err)
+		return "", fmt.Errorf("failed to parse event key: %w", err)
 	}
-	return height, nil
+
+	if len(remaining) != 0 {
+		return "", fmt.Errorf("unexpected remainder in key: %s", remaining)
+	}
+
+	return strconv.FormatInt(height, 10), nil
 }
 
-func parseValueFromEventKey(key string) string {
-	parts := strings.SplitN(key, "/", 5)
-	return parts[2]
+func parseValueFromEventKey(key []byte) (string, error) {
+	var (
+		compositeKey, eventValue string
+		height                   int64
+	)
+
+	_, err := orderedcode.Parse(string(key), &compositeKey, &eventValue, &height)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse event key: %w", err)
+	}
+
+	return eventValue, nil
 }
 
-func lookForHeight(conditions []query.Condition) (int64, bool) {
+// Remove all occurrences of height equality queries except one. While we are traversing the conditions, check whether the only condition in
+// addition to match events is the height equality or height range query. At the same time, if we do have a height range condition
+// ignore the height equality condition. If a height equality exists, place the condition index in the query and the desired height
+// into the heightInfo struct
+func dedupHeight(conditions []syntax.Condition) (dedupConditions []syntax.Condition, heightInfo HeightInfo, found bool) {
+	heightInfo.heightEqIdx = -1
+	heightRangeExists := false
+	var heightCondition []syntax.Condition
+	heightInfo.onlyHeightEq = true
+	heightInfo.onlyHeightRange = true
 	for _, c := range conditions {
-		if c.CompositeKey == types.BlockHeightKey && c.Op == query.OpEqual {
-			return c.Operand.(int64), true
+		if c.Tag == types.BlockHeightKey {
+			if c.Op == syntax.TEq {
+				if found || heightRangeExists {
+					continue
+				}
+				hFloat := c.Arg.Number()
+				if hFloat != nil {
+					h, _ := hFloat.Int64()
+					heightInfo.height = h
+					heightCondition = append(heightCondition, c)
+					found = true
+				}
+			} else {
+				heightInfo.onlyHeightEq = false
+				heightRangeExists = true
+				dedupConditions = append(dedupConditions, c)
+			}
+		} else {
+			heightInfo.onlyHeightRange = false
+			heightInfo.onlyHeightEq = false
+			dedupConditions = append(dedupConditions, c)
 		}
 	}
-
-	return 0, false
+	if !heightRangeExists && len(heightCondition) != 0 {
+		heightInfo.heightEqIdx = len(dedupConditions)
+		heightInfo.onlyHeightRange = false
+		dedupConditions = append(dedupConditions, heightCondition...)
+	} else {
+		// If we found a range make sure we set the hegiht idx to -1 as the height equality
+		// will be removed
+		heightInfo.heightEqIdx = -1
+		heightInfo.height = 0
+		heightInfo.onlyHeightEq = false
+		found = false
+	}
+	return dedupConditions, heightInfo, found
 }

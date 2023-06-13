@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/celestiaorg/go-fraud/fraudserv"
+	abci "github.com/cometbft/cometbft/abci/types"
+	cmcrypto "github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/crypto/merkle"
+	"github.com/cometbft/cometbft/proxy"
+	cmtypes "github.com/cometbft/cometbft/types"
 	"github.com/libp2p/go-libp2p/core/crypto"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmcrypto "github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/proxy"
-	tmtypes "github.com/tendermint/tendermint/types"
 	"go.uber.org/multierr"
 
 	"github.com/rollkit/rollkit/config"
@@ -47,7 +47,7 @@ type Manager struct {
 	lastState types.State
 
 	conf    config.BlockManagerConfig
-	genesis *tmtypes.GenesisDoc
+	genesis *cmtypes.GenesisDoc
 
 	proposerKey crypto.PrivKey
 
@@ -80,7 +80,7 @@ type Manager struct {
 }
 
 // getInitialState tries to load lastState from Store, and if it's not available it reads GenesisDoc.
-func getInitialState(store store.Store, genesis *tmtypes.GenesisDoc) (types.State, error) {
+func getInitialState(store store.Store, genesis *cmtypes.GenesisDoc) (types.State, error) {
 	s, err := store.LoadState()
 	if err != nil {
 		s, err = types.NewFromGenesisDoc(genesis)
@@ -92,12 +92,12 @@ func getInitialState(store store.Store, genesis *tmtypes.GenesisDoc) (types.Stat
 func NewManager(
 	proposerKey crypto.PrivKey,
 	conf config.BlockManagerConfig,
-	genesis *tmtypes.GenesisDoc,
+	genesis *cmtypes.GenesisDoc,
 	store store.Store,
 	mempool mempool.Mempool,
-	proxyApp proxy.AppConnConsensus,
+	proxyApp proxy.AppConns,
 	dalc da.DataAvailabilityLayerClient,
-	eventBus *tmtypes.EventBus,
+	eventBus *cmtypes.EventBus,
 	logger log.Logger,
 	doneBuildingCh chan struct{},
 ) (*Manager, error) {
@@ -121,7 +121,8 @@ func NewManager(
 
 	exec := state.NewBlockExecutor(proposerAddress, conf.NamespaceID, genesis.ChainID, mempool, proxyApp, conf.FraudProofs, eventBus, logger)
 	if s.LastBlockHeight+1 == genesis.InitialHeight {
-		res, err := exec.InitChain(genesis)
+		ctx := context.Background()
+		res, err := exec.InitChain(ctx, genesis)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +171,7 @@ func getAddress(key crypto.PrivKey) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tmcrypto.AddressHash(rawKey), nil
+	return cmcrypto.AddressHash(rawKey), nil
 }
 
 // SetDALC is used to set DataAvailabilityLayerClient used by Manager.
@@ -280,7 +281,7 @@ func (m *Manager) ProcessFraudProof(ctx context.Context, cancel context.CancelFu
 		// TODO(light-client): Set up a new cosmos-sdk app
 		// TODO: Add fraud proof window validation
 
-		success, err := m.executor.VerifyFraudProof(&fraudProof.FraudProof, fraudProof.ExpectedValidAppHash)
+		success, err := m.executor.VerifyFraudProof(ctx, &fraudProof.FraudProof, fraudProof.ExpectedValidAppHash)
 		if err != nil {
 			m.logger.Error("failed to verify fraud proof", "error", err)
 			continue
@@ -545,7 +546,7 @@ func (m *Manager) publishBlock(ctx context.Context) error {
 		block = pendingBlock
 	} else {
 		m.logger.Info("Creating and publishing block", "height", newHeight)
-		block = m.executor.CreateBlock(newHeight, lastCommit, lastHeaderHash, m.lastState)
+		block = m.executor.CreateBlock(ctx, newHeight, lastCommit, lastHeaderHash, m.lastState)
 		m.logger.Debug("block info", "num_tx", len(block.Data.Txs))
 
 		commit, err = m.getCommit(block.SignedHeader.Header)
@@ -578,6 +579,16 @@ func (m *Manager) publishBlock(ctx context.Context) error {
 		}
 	}
 
+	// Add SaveFinalizeBlockResponse
+	// might need to change the type of response we get from ApplyBlock
+	// fail.Fail() // XXX
+
+	// // Save the results before we commit.
+	// if err := e.store.SaveFinalizeBlockResponse(block.Height, abciResponse); err != nil {
+	// 	return state, err
+	// }
+
+	// fail.Fail() // XXX
 	// SaveBlock commits the DB tx
 	err = m.store.SaveBlock(block, commit)
 	if err != nil {
@@ -649,7 +660,7 @@ func (m *Manager) submitBlockToDA(ctx context.Context, block *types.Block) error
 	}
 
 	if !submitted {
-		return fmt.Errorf("Failed to submit block to DA layer after %d attempts", maxSubmitAttempts)
+		return fmt.Errorf("failed to submit block to DA layer after %d attempts", maxSubmitAttempts)
 	}
 
 	return nil
@@ -688,20 +699,20 @@ func updateState(s *types.State, res *abci.ResponseInitChain) {
 			s.ConsensusParams.Validator.PubKeyTypes = append([]string{}, params.Validator.PubKeyTypes...)
 		}
 		if params.Version != nil {
-			s.ConsensusParams.Version.AppVersion = params.Version.AppVersion
+			s.ConsensusParams.Version.App = params.Version.App
 		}
-		s.Version.Consensus.App = s.ConsensusParams.Version.AppVersion
+		s.Version.Consensus.App = s.ConsensusParams.Version.App
 	}
 	// We update the last results hash with the empty hash, to conform with RFC-6962.
 	s.LastResultsHash = merkle.HashFromByteSlices(nil)
 
 	if len(res.Validators) > 0 {
-		vals, err := tmtypes.PB2TM.ValidatorUpdates(res.Validators)
+		vals, err := cmtypes.PB2TM.ValidatorUpdates(res.Validators)
 		if err != nil {
 			// TODO(tzdybal): handle error properly
 			panic(err)
 		}
-		s.Validators = tmtypes.NewValidatorSet(vals)
-		s.NextValidators = tmtypes.NewValidatorSet(vals).CopyIncrementProposerPriority(1)
+		s.Validators = cmtypes.NewValidatorSet(vals)
+		s.NextValidators = cmtypes.NewValidatorSet(vals).CopyIncrementProposerPriority(1)
 	}
 }

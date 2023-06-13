@@ -10,16 +10,15 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/proxy"
-	tmtypes "github.com/tendermint/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	cfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	"github.com/cometbft/cometbft/libs/log"
+	"github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/proxy"
+	tmtypes "github.com/cometbft/cometbft/types"
 
 	"github.com/rollkit/rollkit/mempool"
-	mempoolv1 "github.com/rollkit/rollkit/mempool/v1"
 	"github.com/rollkit/rollkit/mocks"
 	"github.com/rollkit/rollkit/types"
 )
@@ -33,14 +32,15 @@ func doTestCreateBlock(t *testing.T, fraudProofsEnabled bool) {
 	app := &mocks.Application{}
 	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{})
 
-	client, err := proxy.NewLocalClientCreator(app).NewABCIClient()
+	clientCreator := proxy.NewLocalClientCreator(app)
+	client, err := clientCreator.NewABCIClient()
 	require.NoError(err)
-	require.NotNil(client)
+	require.NotNil(clientCreator)
 
 	nsID := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 
-	mpool := mempoolv1.NewTxMempool(logger, cfg.DefaultMempoolConfig(), proxy.NewAppConnMempool(client), 0)
-	executor := NewBlockExecutor([]byte("test address"), nsID, "test", mpool, proxy.NewAppConnConsensus(client), fraudProofsEnabled, nil, logger)
+	mpool := mempool.NewCListMempool(cfg.DefaultMempoolConfig(), proxy.NewAppConnMempool(client, proxy.NopMetrics()), 0)
+	executor := NewBlockExecutor([]byte("test address"), nsID, "test", mpool, proxy.NewAppConns(clientCreator, proxy.NopMetrics()), fraudProofsEnabled, nil, logger)
 
 	state := types.State{}
 	state.ConsensusParams.Block.MaxBytes = 100
@@ -57,25 +57,25 @@ func doTestCreateBlock(t *testing.T, fraudProofsEnabled bool) {
 	state.Validators = tmtypes.NewValidatorSet(validators)
 
 	// empty block
-	block := executor.CreateBlock(1, &types.Commit{}, []byte{}, state)
+	block := executor.CreateBlock(context.Background(), 1, &types.Commit{}, []byte{}, state)
 	require.NotNil(block)
 	assert.Empty(block.Data.Txs)
 	assert.Equal(int64(1), block.SignedHeader.Header.Height())
 
 	// one small Tx
-	err = mpool.CheckTx([]byte{1, 2, 3, 4}, func(r *abci.Response) {}, mempool.TxInfo{})
+	err = mpool.CheckTx([]byte{1, 2, 3, 4}, func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{})
 	require.NoError(err)
-	block = executor.CreateBlock(2, &types.Commit{}, []byte{}, state)
+	block = executor.CreateBlock(context.Background(), 2, &types.Commit{}, []byte{}, state)
 	require.NotNil(block)
 	assert.Equal(int64(2), block.SignedHeader.Header.Height())
 	assert.Len(block.Data.Txs, 1)
 
 	// now there are 3 Txs, and only two can fit into single block
-	err = mpool.CheckTx([]byte{4, 5, 6, 7}, func(r *abci.Response) {}, mempool.TxInfo{})
+	err = mpool.CheckTx([]byte{4, 5, 6, 7}, func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{})
 	require.NoError(err)
-	err = mpool.CheckTx(make([]byte, 100), func(r *abci.Response) {}, mempool.TxInfo{})
+	err = mpool.CheckTx(make([]byte, 100), func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{})
 	require.NoError(err)
-	block = executor.CreateBlock(3, &types.Commit{}, []byte{}, state)
+	block = executor.CreateBlock(context.Background(), 3, &types.Commit{}, []byte{}, state)
 	require.NotNil(block)
 	assert.Len(block.Data.Txs, 2)
 }
@@ -106,21 +106,23 @@ func doTestApplyBlock(t *testing.T, fraudProofsEnabled bool) {
 	app.On("GetAppHash", mock.Anything).Return(abci.ResponseGetAppHash{
 		AppHash: mockAppHash[:],
 	})
-	app.On("Commit", mock.Anything).Return(abci.ResponseCommit{
-		Data: mockAppHash[:],
-	})
+	// app.On("Commit", mock.Anything).Return(abci.ResponseCommit{
+	// 	Data: mockAppHash[:],
+	// })
 
-	client, err := proxy.NewLocalClientCreator(app).NewABCIClient()
+	clientCreator := proxy.NewLocalClientCreator(app)
+	client, err := clientCreator.NewABCIClient()
 	require.NoError(err)
+	require.NotNil(clientCreator)
 	require.NotNil(client)
 
 	nsID := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 	chainID := "test"
 
-	mpool := mempoolv1.NewTxMempool(logger, cfg.DefaultMempoolConfig(), proxy.NewAppConnMempool(client), 0)
+	mpool := mempool.NewCListMempool(cfg.DefaultMempoolConfig(), proxy.NewAppConnMempool(client, proxy.NopMetrics()), 0)
 	eventBus := tmtypes.NewEventBus()
 	require.NoError(eventBus.Start())
-	executor := NewBlockExecutor([]byte("test address"), nsID, chainID, mpool, proxy.NewAppConnConsensus(client), fraudProofsEnabled, eventBus, logger)
+	executor := NewBlockExecutor([]byte("test address"), nsID, chainID, mpool, proxy.NewAppConns(clientCreator, proxy.NopMetrics()), fraudProofsEnabled, eventBus, logger)
 
 	txQuery, err := query.New("tm.event='Tx'")
 	require.NoError(err)
@@ -128,11 +130,11 @@ func doTestApplyBlock(t *testing.T, fraudProofsEnabled bool) {
 	require.NoError(err)
 	require.NotNil(txSub)
 
-	headerQuery, err := query.New("tm.event='NewBlockHeader'")
+	blockQuery, err := query.New("tm.event='NewBlockEvents'")
 	require.NoError(err)
-	headerSub, err := eventBus.Subscribe(context.Background(), "test", headerQuery, 100)
+	blockSub, err := eventBus.Subscribe(context.Background(), "test", blockQuery, 100)
 	require.NoError(err)
-	require.NotNil(headerSub)
+	require.NotNil(blockSub)
 
 	vKey := ed25519.GenPrivKey()
 	validators := []*tmtypes.Validator{
@@ -153,9 +155,9 @@ func doTestApplyBlock(t *testing.T, fraudProofsEnabled bool) {
 	state.ConsensusParams.Block.MaxBytes = 100
 	state.ConsensusParams.Block.MaxGas = 100000
 
-	_ = mpool.CheckTx([]byte{1, 2, 3, 4}, func(r *abci.Response) {}, mempool.TxInfo{})
+	_ = mpool.CheckTx([]byte{1, 2, 3, 4}, func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{})
 	require.NoError(err)
-	block := executor.CreateBlock(1, &types.Commit{Signatures: []types.Signature{types.Signature([]byte{1, 1, 1})}}, []byte{}, state)
+	block := executor.CreateBlock(context.Background(), 1, &types.Commit{Signatures: []types.Signature{types.Signature([]byte{1, 1, 1})}}, []byte{}, state)
 	require.NotNil(block)
 	assert.Equal(int64(1), block.SignedHeader.Header.Height())
 	assert.Len(block.Data.Txs, 1)
@@ -177,11 +179,11 @@ func doTestApplyBlock(t *testing.T, fraudProofsEnabled bool) {
 	require.NoError(err)
 	assert.Equal(mockAppHash, appHash)
 
-	require.NoError(mpool.CheckTx([]byte{0, 1, 2, 3, 4}, func(r *abci.Response) {}, mempool.TxInfo{}))
-	require.NoError(mpool.CheckTx([]byte{5, 6, 7, 8, 9}, func(r *abci.Response) {}, mempool.TxInfo{}))
-	require.NoError(mpool.CheckTx([]byte{1, 2, 3, 4, 5}, func(r *abci.Response) {}, mempool.TxInfo{}))
-	require.NoError(mpool.CheckTx(make([]byte, 90), func(r *abci.Response) {}, mempool.TxInfo{}))
-	block = executor.CreateBlock(2, &types.Commit{Signatures: []types.Signature{types.Signature([]byte{1, 1, 1})}}, []byte{}, newState)
+	require.NoError(mpool.CheckTx([]byte{0, 1, 2, 3, 4}, func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{}))
+	require.NoError(mpool.CheckTx([]byte{5, 6, 7, 8, 9}, func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{}))
+	require.NoError(mpool.CheckTx([]byte{1, 2, 3, 4, 5}, func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{}))
+	require.NoError(mpool.CheckTx(make([]byte, 90), func(r *abci.ResponseCheckTx) {}, mempool.TxInfo{}))
+	block = executor.CreateBlock(context.Background(), 2, &types.Commit{Signatures: []types.Signature{types.Signature([]byte{1, 1, 1})}}, []byte{}, newState)
 	require.NotNil(block)
 	assert.Equal(int64(2), block.SignedHeader.Header.Height())
 	assert.Len(block.Data.Txs, 3)
@@ -222,12 +224,12 @@ func doTestApplyBlock(t *testing.T, fraudProofsEnabled bool) {
 	assert.EqualValues(1, txs[1])
 	assert.EqualValues(3, txs[2])
 
-	require.EqualValues(2, len(headerSub.Out()))
+	require.EqualValues(2, len(blockSub.Out()))
 	for h := 1; h <= 2; h++ {
-		evt := <-headerSub.Out()
-		data, ok := evt.Data().(tmtypes.EventDataNewBlockHeader)
+		evt := <-blockSub.Out()
+		data, ok := evt.Data().(tmtypes.EventDataNewBlockEvents)
 		assert.True(ok)
-		if data.Header.Height == 2 {
+		if data.Height == 2 {
 			assert.EqualValues(3, data.NumTxs)
 		}
 	}

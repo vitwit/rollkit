@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 func TestWebSockets(t *testing.T) {
@@ -66,10 +66,9 @@ func TestWebSockets(t *testing.T) {
 	var payload tmtypes.EventDataNewBlock
 	err = json.Unmarshal(msg, &payload)
 	assert.NoError(err)
-	assert.NotNil(payload.ResultBeginBlock)
+	assert.NotNil(payload.ResultFinalizeBlock)
 	assert.NotNil(payload.Block)
 	assert.GreaterOrEqual(payload.Block.Height, int64(1))
-	assert.NotNil(payload.ResultEndBlock)
 
 	unsubscribeAllReq, err := json2.EncodeClientRequest("unsubscribe_all", &unsubscribeAllArgs{})
 	require.NoError(err)

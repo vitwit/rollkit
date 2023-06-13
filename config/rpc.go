@@ -30,7 +30,7 @@ type RPCConfig struct {
 	TLSCertFile string `mapstructure:"tls-cert-file"`
 
 	// The path to a file containing matching private key that is used to create the HTTPS server.
-	// Might be either absolute path or path related to tendermint's config directory.
+	// Might be either absolute path or path related to cometbft's config directory.
 	//
 	// NOTE: both tls-cert-file and tls-key-file must be present for Tendermint to create HTTPS server.
 	// Otherwise, HTTP server is run.

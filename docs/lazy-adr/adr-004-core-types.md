@@ -126,7 +126,7 @@ type Commit struct {
 
 #### ConsensusParams
 
-[ConsensusParams](https://docs.tendermint.com/master/spec/core/state.html#consensusparams) can be updated by the application through ABCI.
+[ConsensusParams](https://docs.cometbft.com/master/spec/core/state.html#consensusparams) can be updated by the application through ABCI.
 This could be seen as a state transition and the ConsensusHash in the header would then require a dedicated state fraud proof.
 That said, none of the existing default Cosmos-SDK modules actually make use of this functionality though.
 Hence, we can treat the ConsensusParams as constants (for the same app version).
