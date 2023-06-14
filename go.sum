@@ -1368,8 +1368,8 @@ github.com/rogpeppe/go-internal v1.8.1/go.mod h1:JeRgkft04UBgHMgCIwADu4Pn6Mtm5d4
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rollkit/celestia-openrpc v0.0.0-20230531022214-505ff801e818 h1:L7WGAGjCO01pKGmnFCm3cVs+kjga1okEsy1s5J0doR0=
 github.com/rollkit/celestia-openrpc v0.0.0-20230531022214-505ff801e818/go.mod h1:eDBRyA4NoVLTGRXUxMb50/sW456UIptRAqixUqocg3Q=
-github.com/rollkit/cometbft v0.0.0-20230605153923-59c6e1b5781d h1:kymzw0caQ/09hHas1eW1F+3E3MXdN9phixEQfZ8OoTo=
-github.com/rollkit/cometbft v0.0.0-20230605153923-59c6e1b5781d/go.mod h1:5Jz0Z8YsHSf0ZaAqGvi/ifioSdVFPtEGrm8Y9T/993k=
+github.com/rollkit/cometbft v0.0.0-20230614163111-d6a8d2c98cc0 h1:VfgqV/mic4DsrCCNkeqJic68FNGpe0F+AmLxoY9WmSo=
+github.com/rollkit/cometbft v0.0.0-20230614163111-d6a8d2c98cc0/go.mod h1:5Jz0Z8YsHSf0ZaAqGvi/ifioSdVFPtEGrm8Y9T/993k=
 github.com/rs/cors v1.7.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
 github.com/rs/cors v1.8.2/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/rs/cors v1.9.0 h1:l9HGsTsHJcvW14Nk7J9KFz8bzeAWXn3CG6bgt7LsrAE=

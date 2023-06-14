@@ -189,6 +189,6 @@ require (
 )
 
 replace (
-	github.com/cometbft/cometbft => github.com/rollkit/cometbft v0.0.0-20230605153923-59c6e1b5781d
+	github.com/cometbft/cometbft => github.com/rollkit/cometbft v0.0.0-20230614163111-d6a8d2c98cc0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 )
