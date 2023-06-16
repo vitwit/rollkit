@@ -28,16 +28,16 @@ func getRPC(t *testing.T) (*mocks.Application, rpcclient.Client) {
 	t.Helper()
 	require := require.New(t)
 	app := &mocks.Application{}
-	app.On("InitChain", mock.Anything).Return(abci.ResponseInitChain{})
-	app.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
-	app.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	app.On("Commit", mock.Anything).Return(abci.ResponseCommit{})
-	app.On("GetAppHash", mock.Anything).Return(abci.ResponseGetAppHash{})
-	app.On("GenerateFraudProof", mock.Anything).Return(abci.ResponseGenerateFraudProof{})
-	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{
+	app.On("InitChain", context.Background(), mock.Anything).Return(&abci.ResponseInitChain{}, nil)
+	app.On("BeginBlock", context.Background(), mock.Anything).Return(&abci.ResponseBeginBlock{}, nil)
+	app.On("EndBlock", context.Background(), mock.Anything).Return(&abci.ResponseEndBlock{}, nil)
+	app.On("Commit", context.Background(), mock.Anything).Return(&abci.ResponseCommit{}, nil)
+	app.On("GetAppHash", context.Background(), mock.Anything).Return(&abci.ResponseGetAppHash{}, nil)
+	app.On("GenerateFraudProof", context.Background(), mock.Anything).Return(&abci.ResponseGenerateFraudProof{}, nil)
+	app.On("CheckTx", context.Background(), mock.Anything).Return(&abci.ResponseCheckTx{
 		GasWanted: 1000,
 		GasUsed:   1000,
-	})
+	}, nil)
 	app.On("Info", mock.Anything).Return(abci.ResponseInfo{
 		Data:             "mock",
 		Version:          "mock",

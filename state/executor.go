@@ -261,6 +261,7 @@ func (e *BlockExecutor) updateState(state types.State, block *types.Block, abciR
 		LastHeightConsensusParamsChanged: state.LastHeightConsensusParamsChanged,
 		AppHash:                          make(types.Hash, 32),
 	}
+
 	copy(s.LastResultsHash[:], cmtypes.NewResults(abciResponses.DeliverTxs).Hash())
 
 	return s, nil
@@ -327,6 +328,7 @@ func (e *BlockExecutor) validate(state types.State, block *types.Block) error {
 
 func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *types.Block) (*cmstate.LegacyABCIResponses, error) {
 	abciResponses := new(cmstate.LegacyABCIResponses)
+
 	abciResponses.DeliverTxs = make([]*abci.ExecTxResult, len(block.Data.Txs))
 
 	txIdx := 0
@@ -344,29 +346,6 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 	}
 
 	ISRs := make([][]byte, 0)
-
-	e.proxyApp.Mempool().SetResponseCallback(func(req *abci.Request, res *abci.Response) {
-		if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
-			txRes := r.DeliverTx
-			if txRes.Code == abci.CodeTypeOK {
-				validTxs++
-			} else {
-				e.logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)
-				invalidTxs++
-			}
-			abciResponses.DeliverTxs[txIdx] = &abci.ExecTxResult{
-				Code:      txRes.Code,
-				Data:      txRes.Data,
-				Log:       txRes.Log,
-				Info:      txRes.Info,
-				GasWanted: txRes.GasWanted,
-				GasUsed:   txRes.GasUsed,
-				Events:    txRes.Events,
-				Codespace: txRes.Codespace,
-			}
-			txIdx++
-		}
-	})
 
 	if e.fraudProofsEnabled {
 		isr, err := e.getAppHash()
@@ -439,6 +418,7 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 		Misbehavior:        abciBlock.Evidence.Evidence.ToABCI(),
 		Txs:                abciBlock.Txs.ToSliceOfBytes(),
 	})
+
 	if err != nil {
 		e.logger.Error("error in proxyAppConn.FinalizeBlock", "err", err)
 		return nil, err
@@ -459,9 +439,29 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 
 	e.logger.Info("executed block", "height", abciBlock.Height, "app_hash", finalizeBlockResponse.AppHash)
 
-	// get legacy responses from FinalizeBlock
+	// Get legacy responses from FinalizeBlock
 	abciResponses.BeginBlock = &cmstate.ResponseBeginBlock{
 		Events: finalizeBlockResponse.Events,
+	}
+
+	for _, execResult := range finalizeBlockResponse.TxResults {
+		if execResult.Code == abci.CodeTypeOK {
+			validTxs++
+		} else {
+			e.logger.Debug("Invalid tx", "code", execResult.Code, "log", execResult.Log)
+			invalidTxs++
+		}
+		abciResponses.DeliverTxs[txIdx] = &abci.ExecTxResult{
+			Code:      execResult.Code,
+			Data:      execResult.Data,
+			Log:       execResult.Log,
+			Info:      execResult.Info,
+			GasWanted: execResult.GasWanted,
+			GasUsed:   execResult.GasUsed,
+			Events:    execResult.Events,
+			Codespace: execResult.Codespace,
+		}
+		txIdx++
 	}
 
 	err = genAndGossipFraudProofIfNeeded(&beginBlockRequest, nil, nil)

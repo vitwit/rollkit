@@ -35,13 +35,13 @@ func TestAggregatorMode(t *testing.T) {
 	require := require.New(t)
 
 	app := &mocks.Application{}
-	app.On("InitChain", mock.Anything).Return(abci.ResponseInitChain{})
-	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{})
-	app.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
-	app.On("DeliverTx", mock.Anything).Return(abci.ResponseDeliverTx{})
-	app.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	app.On("Commit", mock.Anything).Return(abci.ResponseCommit{})
-	app.On("GetAppHash", mock.Anything).Return(abci.ResponseGetAppHash{})
+	app.On("InitChain", context.Background(), mock.Anything).Return(&abci.ResponseInitChain{}, nil)
+	app.On("CheckTx", context.Background(), mock.Anything).Return(&abci.ResponseCheckTx{}, nil)
+	app.On("BeginBlock", context.Background(), mock.Anything).Return(&abci.ResponseBeginBlock{}, nil)
+	app.On("DeliverTx", context.Background(), mock.Anything).Return(&abci.ResponseDeliverTx{}, nil)
+	app.On("EndBlock", context.Background(), mock.Anything).Return(&abci.ResponseEndBlock{}, nil)
+	app.On("Commit", context.Background(), mock.Anything).Return(&abci.ResponseCommit{}, nil)
+	app.On("GetAppHash", context.Background(), mock.Anything).Return(&abci.ResponseGetAppHash{}, nil)
 
 	key, _, _ := crypto.GenerateEd25519Key(rand.Reader)
 	anotherKey, _, _ := crypto.GenerateEd25519Key(rand.Reader)
@@ -136,13 +136,13 @@ func TestLazyAggregator(t *testing.T) {
 	require := require.New(t)
 
 	app := &mocks.Application{}
-	app.On("InitChain", mock.Anything).Return(abci.ResponseInitChain{})
-	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{})
-	app.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
-	app.On("DeliverTx", mock.Anything).Return(abci.ResponseDeliverTx{})
-	app.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	app.On("Commit", mock.Anything).Return(abci.ResponseCommit{})
-	app.On("GetAppHash", mock.Anything).Return(abci.ResponseGetAppHash{})
+	app.On("InitChain", context.Background(), mock.Anything).Return(&abci.ResponseInitChain{}, nil)
+	app.On("CheckTx", context.Background(), mock.Anything).Return(&abci.ResponseCheckTx{}, nil)
+	app.On("BeginBlock", context.Background(), mock.Anything).Return(&abci.ResponseBeginBlock{}, nil)
+	app.On("DeliverTx", context.Background(), mock.Anything).Return(&abci.ResponseDeliverTx{}, nil)
+	app.On("EndBlock", context.Background(), mock.Anything).Return(&abci.ResponseEndBlock{}, nil)
+	app.On("Commit", context.Background(), mock.Anything).Return(&abci.ResponseCommit{}, nil)
+	app.On("GetAppHash", context.Background(), mock.Anything).Return(&abci.ResponseGetAppHash{}, nil)
 
 	key, _, _ := crypto.GenerateEd25519Key(rand.Reader)
 	genesisValidators, signingKey := getGenesisValidatorSetWithSigner(1)
@@ -640,11 +640,11 @@ func createNode(ctx context.Context, n int, isMalicious bool, aggregator bool, i
 	p2pConfig.Seeds = strings.TrimSuffix(p2pConfig.Seeds, ",")
 
 	app := &mocks.Application{}
-	app.On("InitChain", mock.Anything).Return(abci.ResponseInitChain{})
-	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{})
-	app.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
-	app.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	app.On("Commit", mock.Anything).Return(abci.ResponseCommit{})
+	app.On("InitChain", context.Background(), mock.Anything).Return(&abci.ResponseInitChain{}, nil)
+	app.On("CheckTx", context.Background(), mock.Anything).Return(&abci.ResponseCheckTx{}, nil)
+	app.On("BeginBlock", context.Background(), mock.Anything).Return(&abci.ResponseBeginBlock{}, nil)
+	app.On("EndBlock", context.Background(), mock.Anything).Return(&abci.ResponseEndBlock{}, nil)
+	app.On("Commit", context.Background(), mock.Anything).Return(&abci.ResponseCommit{}, nil)
 	maliciousAppHash := []byte{9, 8, 7, 6}
 	nonMaliciousAppHash := []byte{1, 2, 3, 4}
 	if isMalicious && aggregator {

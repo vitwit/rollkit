@@ -30,7 +30,7 @@ func doTestCreateBlock(t *testing.T, fraudProofsEnabled bool) {
 	logger := log.TestingLogger()
 
 	app := &mocks.Application{}
-	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{})
+	app.On("CheckTx", context.Background(), mock.Anything).Return(&abci.ResponseCheckTx{}, nil)
 
 	clientCreator := proxy.NewLocalClientCreator(app)
 	client, err := clientCreator.NewABCIClient()
@@ -95,11 +95,11 @@ func doTestApplyBlock(t *testing.T, fraudProofsEnabled bool) {
 	logger := log.TestingLogger()
 
 	app := &mocks.Application{}
-	app.On("CheckTx", mock.Anything).Return(abci.ResponseCheckTx{})
-	app.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
-	app.On("DeliverTx", mock.Anything).Return(abci.ResponseDeliverTx{})
-	app.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	app.On("GenerateFraudProof", mock.Anything).Return(abci.ResponseGenerateFraudProof{})
+	app.On("CheckTx", context.Background(), mock.Anything).Return(&abci.ResponseCheckTx{}, nil)
+	app.On("BeginBlock", context.Background(), mock.Anything).Return(&abci.ResponseBeginBlock{}, nil)
+	app.On("DeliverTx", context.Background(), mock.Anything).Return(&abci.ResponseDeliverTx{}, nil)
+	app.On("EndBlock", context.Background(), mock.Anything).Return(&abci.ResponseEndBlock{}, nil)
+	app.On("GenerateFraudProof", context.Background(), mock.Anything).Return(&abci.ResponseGenerateFraudProof{}, nil)
 	var mockAppHash []byte
 	_, err := rand.Read(mockAppHash[:])
 	require.NoError(err)
