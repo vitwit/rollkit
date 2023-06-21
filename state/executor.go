@@ -389,17 +389,7 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 	}
 	abciHeader.ChainID = e.chainID
 	abciHeader.ValidatorsHash = state.Validators.Hash()
-	beginBlockRequest := abci.RequestBeginBlock{
-		Hash:   hash[:],
-		Header: abciHeader,
-		LastCommitInfo: abci.CommitInfo{
-			Round: 0,
-			Votes: nil,
-		},
-		ByzantineValidators: nil,
-	}
 
-	commitInfo := buildLastCommitInfo(block, state.Validators, state.InitialHeight)
 	abciBlock, err := abciconv.ToABCIBlock(block)
 	if err != nil {
 		return nil, err
@@ -410,13 +400,16 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 	// and add a method to save all the relevant changes into the state.
 	finalizeBlockResponse, err := e.proxyApp.Consensus().FinalizeBlock(context.TODO(), &abci.RequestFinalizeBlock{
 		Hash:               block.Hash(),
-		NextValidatorsHash: abciBlock.NextValidatorsHash,
-		ProposerAddress:    abciBlock.ProposerAddress,
-		Height:             abciBlock.Height,
-		Time:               abciBlock.Time,
-		DecidedLastCommit:  commitInfo,
-		Misbehavior:        abciBlock.Evidence.Evidence.ToABCI(),
-		Txs:                abciBlock.Txs.ToSliceOfBytes(),
+		NextValidatorsHash: abciHeader.NextValidatorsHash,
+		ProposerAddress:    abciHeader.ProposerAddress,
+		Height:             abciHeader.Height,
+		Time:               abciHeader.Time,
+		DecidedLastCommit: abci.CommitInfo{
+			Round: 0,
+			Votes: nil,
+		},
+		Misbehavior: abciBlock.Evidence.Evidence.ToABCI(),
+		Txs:         abciBlock.Txs.ToSliceOfBytes(),
 	})
 
 	if err != nil {
@@ -462,6 +455,16 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 			Codespace: execResult.Codespace,
 		}
 		txIdx++
+	}
+
+	beginBlockRequest := abci.RequestBeginBlock{
+		Hash:   hash[:],
+		Header: abciHeader,
+		LastCommitInfo: abci.CommitInfo{
+			Round: 0,
+			Votes: nil,
+		},
+		ByzantineValidators: nil,
 	}
 
 	err = genAndGossipFraudProofIfNeeded(&beginBlockRequest, nil, nil)
@@ -634,45 +637,4 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate, params *cmprot
 		}
 	}
 	return nil
-}
-
-//---------------------------------------------------------
-// Helper functions for executing blocks and updating state
-
-func buildLastCommitInfo(block *types.Block, lastValSet *cmtypes.ValidatorSet, initialHeight int64) abci.CommitInfo {
-	if block.SignedHeader.Height() == initialHeight {
-		// there is no last commit for the initial height.
-		// return an empty value.
-		return abci.CommitInfo{}
-	}
-
-	abciCommit := abciconv.ToABCICommit(&block.SignedHeader.Commit, block.SignedHeader.Header.BaseHeader.Height, block.SignedHeader.Hash())
-
-	var (
-		commitSize = abciCommit.Size()
-		valSetLen  = len(lastValSet.Validators)
-	)
-
-	// ensure that the size of the validator set in the last commit matches
-	// the size of the validator set in the state store.
-	if commitSize != valSetLen {
-		panic(fmt.Sprintf(
-			"commit size (%d) doesn't match validator set length (%d) at height %d\n\n%v\n\n%v",
-			commitSize, valSetLen, block.SignedHeader.Height(), abciCommit.Signatures, lastValSet.Validators,
-		))
-	}
-
-	votes := make([]abci.VoteInfo, abciCommit.Size())
-	for i, val := range lastValSet.Validators {
-		commitSig := abciCommit.Signatures[i]
-		votes[i] = abci.VoteInfo{
-			Validator:   cmtypes.TM2PB.Validator(val),
-			BlockIdFlag: cmproto.BlockIDFlag(commitSig.BlockIDFlag),
-		}
-	}
-
-	return abci.CommitInfo{
-		Round: abciCommit.Round,
-		Votes: votes,
-	}
 }
