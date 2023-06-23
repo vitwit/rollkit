@@ -426,6 +426,12 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 
 	e.logger.Info("executed block", "height", abciHeader.Height, "app_hash", finalizeBlockResponse.AppHash)
 
+	// we add all the block events to EndBlock, since we can no longer distinguish when events happened
+	// and events in EndBlock better simulate the FinalizeBlock Event
+	abciResponses.BeginBlock = &cmstate.ResponseBeginBlock{
+		Events: make([]abci.Event, 0),
+	}
+
 	for _, execResult := range finalizeBlockResponse.TxResults {
 		if execResult.Code == abci.CodeTypeOK {
 			validTxs++
