@@ -426,11 +426,6 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 
 	e.logger.Info("executed block", "height", abciHeader.Height, "app_hash", finalizeBlockResponse.AppHash)
 
-	// Get legacy responses from FinalizeBlock
-	abciResponses.BeginBlock = &cmstate.ResponseBeginBlock{
-		Events: finalizeBlockResponse.Events,
-	}
-
 	for _, execResult := range finalizeBlockResponse.TxResults {
 		if execResult.Code == abci.CodeTypeOK {
 			validTxs++
@@ -477,6 +472,10 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 		}
 	}
 	endBlockRequest := abci.RequestEndBlock{Height: block.SignedHeader.Header.Height()}
+
+	// we write all the events in EndBlock, since we can't tell if the events occur during
+	// a hypotethical BeginBlock or EndBlock.
+	// All of this should change to use FinalizeBlock
 	abciResponses.EndBlock = &cmstate.ResponseEndBlock{
 		ValidatorUpdates:      finalizeBlockResponse.GetValidatorUpdates(),
 		ConsensusParamUpdates: finalizeBlockResponse.GetConsensusParamUpdates(),
