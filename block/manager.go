@@ -58,6 +58,8 @@ type Manager struct {
 	retriever da.BlockRetriever
 	// daHeight is the height of the latest processed DA block
 	daHeight uint64
+	// height of the rollkit chain stored in-memory
+	height uint64
 
 	HeaderCh chan *types.SignedHeader
 
@@ -150,6 +152,7 @@ func NewManager(
 		dalc:        dalc,
 		retriever:   dalc.(da.BlockRetriever), // TODO(tzdybal): do it in more gentle way (after MVP)
 		daHeight:    s.DAHeight,
+		height:      store.Height(),
 		// channels are buffered to avoid blocking on input/output operations, buffer sizes are arbitrary
 		HeaderCh:          make(chan *types.SignedHeader, 100),
 		blockInCh:         make(chan newBlockEvent, 100),
@@ -336,9 +339,9 @@ func (m *Manager) SyncLoop(ctx context.Context, cancel context.CancelFunc) {
 // If commit for block h is available, we proceed with sync process, and remove synced block from sync cache.
 func (m *Manager) trySyncNextBlock(ctx context.Context, daHeight uint64) error {
 	var commit *types.Commit
-	currentHeight := m.store.Height() // TODO(tzdybal): maybe store a copy in memory
-
+	currentHeight := m.height
 	b, ok := m.syncCache[currentHeight+1]
+
 	if !ok {
 		return nil
 	}
@@ -418,7 +421,7 @@ func (m *Manager) RetrieveLoop(ctx context.Context) {
 				m.logger.Debug("retrieve", "daHeight", daHeight)
 				err := m.processNextDABlock(ctx)
 				if err != nil {
-					m.logger.Error("failed to retrieve block from DALC", "daHeight", daHeight, "errors", err.Error())
+					m.logger.Debug("failed to retrieve block from DALC", "daHeight", daHeight, "errors", err.Error())
 					break
 				}
 				atomic.AddUint64(&m.daHeight, 1)
@@ -579,16 +582,13 @@ func (m *Manager) publishBlock(ctx context.Context) error {
 		}
 	}
 
-	// Add SaveFinalizeBlockResponse
-	// might need to change the type of response we get from ApplyBlock
-	// fail.Fail() // XXX
+	// We might want to add something like this, where we save the FinalizeBlockResponse from
+	// ApplyBlock, we can use something like responseFinalizeBlockFromLegacy to accomplish this
 
-	// // Save the results before we commit.
 	// if err := e.store.SaveFinalizeBlockResponse(block.Height, abciResponse); err != nil {
 	// 	return state, err
 	// }
 
-	// fail.Fail() // XXX
 	// SaveBlock commits the DB tx
 	err = m.store.SaveBlock(block, commit)
 	if err != nil {
@@ -600,6 +600,9 @@ func (m *Manager) publishBlock(ctx context.Context) error {
 		m.logger.Error("Failed to submit block to DA Layer")
 		return err
 	}
+
+	// update in-memory height
+	m.height = newHeight
 
 	blockHeight := uint64(block.SignedHeader.Header.Height())
 

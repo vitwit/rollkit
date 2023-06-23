@@ -15,7 +15,6 @@ import (
 	cmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cometbft/cometbft/proxy"
 	cmtypes "github.com/cometbft/cometbft/types"
-	"go.uber.org/multierr"
 
 	abciconv "github.com/rollkit/rollkit/conv/abci"
 	"github.com/rollkit/rollkit/log"
@@ -189,10 +188,7 @@ func (e *BlockExecutor) Commit(ctx context.Context, state types.State, block *ty
 
 	state.AppHash = appHash
 
-	err = e.publishEvents(resp, block, state)
-	if err != nil {
-		e.logger.Error("failed to fire block events", "error", err)
-	}
+	e.publishEvents(resp, block, state)
 
 	return appHash, retainHeight, nil
 }
@@ -275,7 +271,6 @@ func (e *BlockExecutor) commit(ctx context.Context, state types.State, block *ty
 	if err != nil {
 		return nil, 0, err
 	}
-
 	commitResp, err := e.proxyApp.Consensus().Commit(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -292,7 +287,6 @@ func (e *BlockExecutor) commit(ctx context.Context, state types.State, block *ty
 	if err != nil {
 		return nil, 0, err
 	}
-
 	return appHash.AppHash, uint64(commitResp.RetainHeight), err
 }
 
@@ -430,7 +424,7 @@ func (e *BlockExecutor) execute(ctx context.Context, state types.State, block *t
 		return nil, fmt.Errorf("expected tx results length to match size of transactions in block. Expected %d, got %d", len(block.Data.Txs), len(finalizeBlockResponse.TxResults))
 	}
 
-	e.logger.Info("executed block", "height", abciBlock.Height, "app_hash", finalizeBlockResponse.AppHash)
+	e.logger.Info("executed block", "height", abciHeader.Height, "app_hash", finalizeBlockResponse.AppHash)
 
 	// Get legacy responses from FinalizeBlock
 	abciResponses.BeginBlock = &cmstate.ResponseBeginBlock{
@@ -547,47 +541,74 @@ func (e *BlockExecutor) getLastCommitHash(lastCommit *types.Commit, header *type
 	return lastABCICommit.Hash()
 }
 
-func (e *BlockExecutor) publishEvents(resp *cmstate.LegacyABCIResponses, block *types.Block, state types.State) error {
+func (e *BlockExecutor) publishEvents(resp *cmstate.LegacyABCIResponses, block *types.Block, state types.State) {
 	if e.eventBus == nil {
-		return nil
+		return
 	}
 
 	abciBlock, err := abciconv.ToABCIBlock(block)
+
 	abciBlock.Header.ValidatorsHash = state.Validators.Hash()
 	if err != nil {
-		return err
+		return
 	}
 
-	err = multierr.Append(err, e.eventBus.PublishEventNewBlock(cmtypes.EventDataNewBlock{
+	finalizeBlockResp := abci.ResponseFinalizeBlock{
+		TxResults:             resp.DeliverTxs,
+		ValidatorUpdates:      resp.EndBlock.ValidatorUpdates,
+		ConsensusParamUpdates: resp.EndBlock.ConsensusParamUpdates,
+		Events:                append(resp.BeginBlock.Events, resp.EndBlock.Events...),
+		AppHash:               state.AppHash,
+	}
+	if err := e.eventBus.PublishEventNewBlock(cmtypes.EventDataNewBlock{
 		Block: abciBlock,
-		ResultFinalizeBlock: abci.ResponseFinalizeBlock{
-			TxResults:             resp.DeliverTxs,
-			ValidatorUpdates:      resp.EndBlock.ValidatorUpdates,
-			ConsensusParamUpdates: resp.EndBlock.ConsensusParamUpdates,
-			Events:                append(resp.BeginBlock.Events, resp.EndBlock.Events...),
-			AppHash:               state.AppHash,
+		BlockID: cmtypes.BlockID{
+			Hash: cmbytes.HexBytes(block.SignedHeader.Header.Hash()),
+			// for now, we don't care about part set headers
 		},
-	}))
-	err = multierr.Append(err, e.eventBus.PublishEventNewBlockHeader(cmtypes.EventDataNewBlockHeader{
+		ResultFinalizeBlock: finalizeBlockResp,
+	}); err != nil {
+		e.logger.Error("failed publishing new block", "err", err)
+	}
+
+	if err := e.eventBus.PublishEventNewBlockHeader(cmtypes.EventDataNewBlockHeader{
 		Header: abciBlock.Header,
-	}))
-	for _, ev := range abciBlock.Evidence.Evidence {
-		err = multierr.Append(err, e.eventBus.PublishEventNewEvidence(cmtypes.EventDataNewEvidence{
-			Evidence: ev,
-			Height:   block.SignedHeader.Header.Height(),
-		}))
+	}); err != nil {
+		e.logger.Error("failed publishing new block header", "err", err)
 	}
-	for i, dtx := range resp.DeliverTxs {
-		err = multierr.Append(err, e.eventBus.PublishEventTx(cmtypes.EventDataTx{
+
+	if err := e.eventBus.PublishEventNewBlockEvents(cmtypes.EventDataNewBlockEvents{
+		Height: abciBlock.Height,
+		Events: finalizeBlockResp.Events,
+		NumTxs: int64(len(abciBlock.Txs)),
+	}); err != nil {
+		e.logger.Error("failed publishing new block events", "err", err)
+	}
+
+	if len(abciBlock.Evidence.Evidence) != 0 {
+		for _, ev := range abciBlock.Evidence.Evidence {
+			if err := e.eventBus.PublishEventNewEvidence(cmtypes.EventDataNewEvidence{
+				Evidence: ev,
+				Height:   block.SignedHeader.Header.Height(),
+			}); err != nil {
+				e.logger.Error("failed publishing new evidence", "err", err)
+			}
+		}
+	}
+
+	for i, tx := range abciBlock.Data.Txs {
+		err := e.eventBus.PublishEventTx(cmtypes.EventDataTx{
 			TxResult: abci.TxResult{
-				Height: block.SignedHeader.Header.Height(),
+				Height: abciBlock.Height,
 				Index:  uint32(i),
-				Tx:     abciBlock.Data.Txs[i],
-				Result: *dtx,
+				Tx:     tx,
+				Result: *(finalizeBlockResp.TxResults[i]),
 			},
-		}))
+		})
+		if err != nil {
+			e.logger.Error("failed publishing event TX", "err", err)
+		}
 	}
-	return err
 }
 
 func (e *BlockExecutor) getAppHash() ([]byte, error) {
