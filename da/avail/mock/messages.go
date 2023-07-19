@@ -35,6 +35,7 @@ func SubmitData(size int, apiURL string, seed string, AppID int, data []byte) er
 	if err != nil {
 		return fmt.Errorf("cannot create new call:%w", err)
 	}
+	// fmt.Println(c)
 
 	//Create the extrinsic
 	ext := types.NewExtrinsic(c)
@@ -64,6 +65,8 @@ func SubmitData(size int, apiURL string, seed string, AppID int, data []byte) er
 	if err != nil || !ok {
 		return fmt.Errorf("cannot get latest storage:%w", err)
 	}
+
+	// fmt.Println(accountInfo)
 
 	nonce := uint32(accountInfo.Nonce)
 	o := types.SignatureOptions{

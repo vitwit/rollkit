@@ -1,6 +1,6 @@
 module github.com/rollkit/rollkit
 
-go 1.18
+go 1.19
 
 require (
 	cosmossdk.io/math v1.0.1
@@ -9,7 +9,7 @@ require (
 	github.com/celestiaorg/nmt v0.17.0
 	github.com/celestiaorg/rsmt2d v0.9.0
 	github.com/celestiaorg/utils v0.1.0
-	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.16
+	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.12
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/go-kit/kit v0.12.0
 	github.com/gogo/protobuf v1.3.3
@@ -30,6 +30,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tendermint/tendermint v0.35.9
+	github.com/vedhavyas/go-subkey v1.0.2
 	go.uber.org/multierr v1.11.0
 	golang.org/x/net v0.12.0
 	google.golang.org/grpc v1.55.0
@@ -168,7 +169,6 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
-	github.com/vedhavyas/go-subkey v1.0.4 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -197,7 +197,9 @@ require (
 )
 
 replace (
-	github.com/centrifuge/go-substrate-rpc-client/v4 => github.com/availproject/go-substrate-rpc-client/v4 v4.0.12-avail-1.4.0-rc1-5e286e3
+	github.com/centrifuge/go-substrate-rpc-client/v4 => ../../gsrpc
+	// github.com/vedhavyas/go-subkey => github.com/vedhavyas/go-subkey/v2 v2.0.0
+	// github.com/vedhavyas/go-subkey/v2 => github.com/vedhavyas/go-subkey/v2 v2.0.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
 	// github.com/tendermint/tendermint => github.com/celestiaorg/tendermint v0.34.22-0.20221202214355-3605c597500d
 	github.com/tendermint/tendermint => github.com/rollkit/cometbft v0.0.0-20230524013001-2968c8b8b121
