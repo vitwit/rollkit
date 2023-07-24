@@ -30,7 +30,6 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tendermint/tendermint v0.35.9
-	github.com/vedhavyas/go-subkey v1.0.2
 	go.uber.org/multierr v1.11.0
 	golang.org/x/net v0.12.0
 	google.golang.org/grpc v1.55.0
@@ -169,6 +168,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
+	github.com/vedhavyas/go-subkey v1.0.4 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -197,7 +197,8 @@ require (
 )
 
 replace (
-	github.com/centrifuge/go-substrate-rpc-client/v4 => ../../gsrpc
+	github.com/centrifuge/go-substrate-rpc-client/v4 => /home/chandini/go/src/github.com/chandiniv1/go-substrate-rpc-client
+
 	// github.com/vedhavyas/go-subkey => github.com/vedhavyas/go-subkey/v2 v2.0.0
 	// github.com/vedhavyas/go-subkey/v2 => github.com/vedhavyas/go-subkey/v2 v2.0.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
