@@ -62,8 +62,6 @@ func (c *DataAvailabilityLayerClient) Stop() error {
 // SubmitBlock submits a block to DA layer.
 func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *types.Block) da.ResultSubmitBlock {
 
-	fmt.Println("submit block method called.......")
-
 	data, err := block.MarshalBinary()
 	if err != nil {
 		return da.ResultSubmitBlock{
@@ -141,13 +139,15 @@ func (a *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 }
 
 // RetrieveBlocks gets a batch of blocks from DA layer.
-func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
-	fmt.Println("retrieve blocks method called.................")
 
+func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
+	type AppData struct {
+		Block      uint32 `json:"block"`
+		Extrinsics string `json:"extrinsics"`
+	}
 	blocks := make([]*types.Block, 1)
 	blocks[0] = new(types.Block)
-	// var blockNumber int
-	blockNumber := 205139
+	blockNumber := dataLayerHeight
 	appDataURL := fmt.Sprintf("http://localhost:7000/v1/appdata/%d?decode=true", blockNumber)
 	response, err := http.Get(appDataURL)
 	if err != nil {
@@ -158,7 +158,6 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
-
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
@@ -168,16 +167,56 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
-
-	fmt.Println("retrieved block data is", string(responseData))
+	var appDataObject AppData
+	json.Unmarshal(responseData, &appDataObject)
 
 	return da.ResultRetrieveBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
-			DAHeight: 1,              //uint64(appDataObject.Block),
-			Message:  "block data: ", //+ appDataObject.Extrinsics,
+			DAHeight: uint64(appDataObject.Block),
+			Message:  "block data: " + appDataObject.Extrinsics,
 		},
 		Blocks: blocks,
 	}
-
 }
+
+// func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
+// 	fmt.Println("retrieve blocks method called.................")
+
+// 	blocks := make([]*types.Block, 1)
+// 	blocks[0] = new(types.Block)
+
+// 	blockNumber := 205139
+// 	appDataURL := fmt.Sprintf("http://localhost:7000/v1/appdata/%d?decode=true", blockNumber)
+// 	response, err := http.Get(appDataURL)
+// 	if err != nil {
+// 		return da.ResultRetrieveBlocks{
+// 			BaseResult: da.BaseResult{
+// 				Code:    da.StatusError,
+// 				Message: err.Error(),
+// 			},
+// 		}
+// 	}
+
+// 	responseData, err := ioutil.ReadAll(response.Body)
+// 	if err != nil {
+// 		return da.ResultRetrieveBlocks{
+// 			BaseResult: da.BaseResult{
+// 				Code:    da.StatusError,
+// 				Message: err.Error(),
+// 			},
+// 		}
+// 	}
+
+// 	fmt.Println("retrieved block data is", string(responseData))
+
+// 	return da.ResultRetrieveBlocks{
+// 		BaseResult: da.BaseResult{
+// 			Code:     da.StatusSuccess,
+// 			DAHeight: 1,              //uint64(appDataObject.Block),
+// 			Message:  "block data: ", //+ appDataObject.Extrinsics,
+// 		},
+// 		Blocks: blocks,
+// 	}
+
+// }
