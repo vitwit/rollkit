@@ -18,10 +18,11 @@ import (
 )
 
 type Config struct {
-	Seed   string `json:"seed"`
-	ApiURL string `json:"api_url"`
-	Size   int    `json:"size"`
-	AppID  int    `json:"app_id"`
+	Seed       string  `json:"seed"`
+	ApiURL     string  `json:"api_url"`
+	Size       int     `json:"size"`
+	AppID      int     `json:"app_id"`
+	confidence float32 `json:"confidence"`
 }
 
 type DataAvailabilityLayerClient struct {
@@ -92,7 +93,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *ty
 }
 
 // CheckBlockAvailability queries DA layer to check data availability of block.
-func (a *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context, dataLayerHeight uint64) da.ResultCheckBlock {
+func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context, dataLayerHeight uint64) da.ResultCheckBlock {
 
 	type Confidence struct {
 		Block                uint32  `json:"block"`
@@ -132,7 +133,7 @@ func (a *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 			Code:     da.StatusSuccess,
 			DAHeight: uint64(confidenceObject.Block),
 		},
-		DataAvailable: confidenceObject.Confidence > 92,
+		DataAvailable: confidenceObject.Confidence > float64(c.config.confidence),
 	}
 }
 
