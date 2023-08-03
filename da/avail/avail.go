@@ -12,7 +12,7 @@ import (
 	openrpc "github.com/rollkit/celestia-openrpc"
 	openrpcns "github.com/rollkit/celestia-openrpc/types/namespace"
 	"github.com/rollkit/rollkit/da"
-	"github.com/rollkit/rollkit/da/avail/mock"
+	"github.com/rollkit/rollkit/da/avail/datasubmit"
 	"github.com/rollkit/rollkit/log"
 	"github.com/rollkit/rollkit/types"
 )
@@ -71,7 +71,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *ty
 		}
 	}
 
-	txHash, err := mock.SubmitData(1000, c.config.ApiURL, c.config.Seed, c.config.AppID, data)
+	txHash, err := datasubmit.SubmitData(1000, c.config.ApiURL, c.config.Seed, c.config.AppID, data)
 
 	if err != nil {
 		return da.ResultSubmitBlock{
