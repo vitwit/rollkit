@@ -148,7 +148,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 	blocks := make([]*types.Block, 1)
 	blocks[0] = new(types.Block)
 
-	blockNumber := 248453
+	blockNumber := dataLayerHeight
 	appDataURL := fmt.Sprintf("http://localhost:7000/v1/appdata/%d?decode=true", blockNumber)
 	response, err := http.Get(appDataURL)
 	if err != nil {
