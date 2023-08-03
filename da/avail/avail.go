@@ -24,7 +24,6 @@ type Config struct {
 	AppID  int    `json:"app_id"`
 }
 
-// DataAvailabilityLayerClient use celestia-node public API.
 type DataAvailabilityLayerClient struct {
 	rpc       *openrpc.Client
 	namespace openrpcns.Namespace
@@ -72,7 +71,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *ty
 		}
 	}
 
-	txHash, err := mock.SubmitData(1000, c.config.ApiURL, c.config.Seed, 0, data)
+	txHash, err := mock.SubmitData(1000, c.config.ApiURL, c.config.Seed, c.config.AppID, data)
 
 	if err != nil {
 		return da.ResultSubmitBlock{
@@ -87,12 +86,12 @@ func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *ty
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
 			Message:  "tx hash: " + hex.EncodeToString(txHash[:]),
-			DAHeight: 1, //uint64(txResponse.Height),
+			DAHeight: 1,
 		},
 	}
 }
 
-// CheckBlockAvailability queries DA layer to check data availability of block at given height.
+// CheckBlockAvailability queries DA layer to check data availability of block.
 func (a *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context, dataLayerHeight uint64) da.ResultCheckBlock {
 
 	type Confidence struct {
@@ -101,7 +100,6 @@ func (a *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 		SerialisedConfidence *string `json:"serialised_confidence,omitempty"`
 	}
 
-	fmt.Println("check block availability called.........")
 	blockNumber := dataLayerHeight
 	confidenceURL := fmt.Sprintf("http://localhost:7000/v1/confidence/%d", blockNumber)
 
@@ -138,16 +136,19 @@ func (a *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 	}
 }
 
-// RetrieveBlocks gets a batch of blocks from DA layer.
+//RetrieveBlocks gets the block from DA layer.
 
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
+
 	type AppData struct {
 		Block      uint32 `json:"block"`
 		Extrinsics string `json:"extrinsics"`
 	}
+
 	blocks := make([]*types.Block, 1)
 	blocks[0] = new(types.Block)
-	blockNumber := dataLayerHeight
+
+	blockNumber := 248453
 	appDataURL := fmt.Sprintf("http://localhost:7000/v1/appdata/%d?decode=true", blockNumber)
 	response, err := http.Get(appDataURL)
 	if err != nil {
@@ -179,44 +180,3 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 		Blocks: blocks,
 	}
 }
-
-// func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
-// 	fmt.Println("retrieve blocks method called.................")
-
-// 	blocks := make([]*types.Block, 1)
-// 	blocks[0] = new(types.Block)
-
-// 	blockNumber := 205139
-// 	appDataURL := fmt.Sprintf("http://localhost:7000/v1/appdata/%d?decode=true", blockNumber)
-// 	response, err := http.Get(appDataURL)
-// 	if err != nil {
-// 		return da.ResultRetrieveBlocks{
-// 			BaseResult: da.BaseResult{
-// 				Code:    da.StatusError,
-// 				Message: err.Error(),
-// 			},
-// 		}
-// 	}
-
-// 	responseData, err := ioutil.ReadAll(response.Body)
-// 	if err != nil {
-// 		return da.ResultRetrieveBlocks{
-// 			BaseResult: da.BaseResult{
-// 				Code:    da.StatusError,
-// 				Message: err.Error(),
-// 			},
-// 		}
-// 	}
-
-// 	fmt.Println("retrieved block data is", string(responseData))
-
-// 	return da.ResultRetrieveBlocks{
-// 		BaseResult: da.BaseResult{
-// 			Code:     da.StatusSuccess,
-// 			DAHeight: 1,              //uint64(appDataObject.Block),
-// 			Message:  "block data: ", //+ appDataObject.Extrinsics,
-// 		},
-// 		Blocks: blocks,
-// 	}
-
-// }

@@ -1,13 +1,12 @@
 package mock
 
 import (
-	"fmt"
-
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
+// submit data submits the extrinsic through substrate api
 func SubmitData(size int, apiURL string, seed string, AppID int, data []byte) (types.Hash, error) {
 	api, err := gsrpc.NewSubstrateAPI(apiURL)
 	if err != nil {
@@ -83,7 +82,6 @@ func SubmitData(size int, apiURL string, seed string, AppID int, data []byte) (t
 	if err != nil {
 		return types.Hash{}, err
 	}
-	fmt.Printf("Data submitted: %v against appID %v  sent with hash %#x\n", data, appID, hash)
 
 	return hash, nil
 
