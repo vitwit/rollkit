@@ -9,8 +9,6 @@ import (
 	"net/http"
 
 	ds "github.com/ipfs/go-datastore"
-	openrpc "github.com/rollkit/celestia-openrpc"
-	openrpcns "github.com/rollkit/celestia-openrpc/types/namespace"
 	"github.com/rollkit/rollkit/da"
 	"github.com/rollkit/rollkit/da/avail/datasubmit"
 	"github.com/rollkit/rollkit/log"
@@ -26,8 +24,7 @@ type Config struct {
 }
 
 type DataAvailabilityLayerClient struct {
-	rpc       *openrpc.Client
-	namespace openrpcns.Namespace
+	namespace types.NamespaceID
 	config    Config
 	logger    log.Logger
 }
