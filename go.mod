@@ -34,6 +34,7 @@ require (
 	golang.org/x/net v0.12.0
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.31.0
+// github.com/chandiniv1/go-substrate-rpc-client/v4 dfd1152c8eca19e7090112c105770db21149e3cf
 )
 
 require (
@@ -197,10 +198,8 @@ require (
 )
 
 replace (
-	github.com/centrifuge/go-substrate-rpc-client/v4 => /home/chandini/go/src/github.com/chandiniv1/go-substrate-rpc-client
+	github.com/centrifuge/go-substrate-rpc-client/v4 => github.com/chandiniv1/go-substrate-rpc-client/v4 v4.0.12-avail-1.5.0-4eb55aaa492.0.20230719142342-dfd1152c8eca
 
-	// github.com/vedhavyas/go-subkey => github.com/vedhavyas/go-subkey/v2 v2.0.0
-	// github.com/vedhavyas/go-subkey/v2 => github.com/vedhavyas/go-subkey/v2 v2.0.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
 	// github.com/tendermint/tendermint => github.com/celestiaorg/tendermint v0.34.22-0.20221202214355-3605c597500d
 	github.com/tendermint/tendermint => github.com/rollkit/cometbft v0.0.0-20230524013001-2968c8b8b121

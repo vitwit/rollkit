@@ -21,7 +21,6 @@ type Config struct {
 	BaseURL    string  `json:"base_url"`
 	Seed       string  `json:"seed"`
 	ApiURL     string  `json:"api_url"`
-	Size       int     `json:"size"`
 	AppID      int     `json:"app_id"`
 	confidence float64 `json:"confidence"`
 }
@@ -87,7 +86,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *ty
 		}
 	}
 
-	txHash, err := datasubmit.SubmitData(c.config.Size, c.config.ApiURL, c.config.Seed, c.config.AppID, data)
+	txHash, err := datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
 
 	if err != nil {
 		return da.ResultSubmitBlock{
@@ -135,7 +134,15 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 	}
 
 	var confidenceObject Confidence
-	json.Unmarshal(responseData, &confidenceObject)
+	err = json.Unmarshal(responseData, &confidenceObject)
+	if err != nil {
+		return da.ResultCheckBlock{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
 
 	return da.ResultCheckBlock{
 		BaseResult: da.BaseResult{
@@ -174,8 +181,15 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 		}
 	}
 	var appDataObject AppData
-	json.Unmarshal(responseData, &appDataObject)
-
+	err = json.Unmarshal(responseData, &appDataObject)
+	if err != nil {
+		return da.ResultRetrieveBlocks{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
 	return da.ResultRetrieveBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,

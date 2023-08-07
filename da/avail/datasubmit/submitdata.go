@@ -7,7 +7,7 @@ import (
 )
 
 // submit data submits the extrinsic through substrate api
-func SubmitData(size int, apiURL string, seed string, AppID int, data []byte) (types.Hash, error) {
+func SubmitData(apiURL string, seed string, appID int, data []byte) (types.Hash, error) {
 	api, err := gsrpc.NewSubstrateAPI(apiURL)
 	if err != nil {
 		return types.Hash{}, err
@@ -18,11 +18,9 @@ func SubmitData(size int, apiURL string, seed string, AppID int, data []byte) (t
 		return types.Hash{}, err
 	}
 
-	var appID int
-
 	// if app id is greater than 0 then it must be created before submitting data
-	if AppID != 0 {
-		appID = AppID
+	if appID == 0 {
+		return types.Hash{}, err
 	}
 
 	c, err := types.NewCall(meta, "DataAvailability.submit_data", data)
