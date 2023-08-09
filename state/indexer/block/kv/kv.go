@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
 
 	ds "github.com/ipfs/go-datastore"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/types"
 
 	"github.com/rollkit/rollkit/state/indexer"
 	"github.com/rollkit/rollkit/store"
@@ -258,13 +259,13 @@ func (idx *BlockerIndexer) matchRange(
 			continue
 		}
 
-		if _, ok := qr.AnyBound().(int64); ok {
+		if _, ok := qr.AnyBound().(*big.Int); ok {
 			include := true
-			if lowerBound != nil && v < lowerBound.(int64) {
+			if lowerBound != nil && v < lowerBound.(*big.Int).Int64() {
 				include = false
 			}
 
-			if upperBound != nil && v > upperBound.(int64) {
+			if upperBound != nil && v > upperBound.(*big.Int).Int64() {
 				include = false
 			}
 
