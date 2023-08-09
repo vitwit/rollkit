@@ -1,7 +1,7 @@
 package datasubmit
 
 import (
-	"errors"
+	//"errors"
 
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
@@ -20,8 +20,8 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) (types.Hash,
 		return types.Hash{}, err
 	}
 
-	// if app id is greater than 0 then it must be created before submitting data
-	err = errors.New("AppID can be 0")
+	//if app id is greater than 0 then it must be created before submitting data
+	//err = errors.New("AppID can be 0")
 	if appID == 0 {
 		return types.Hash{}, err
 	}
@@ -62,13 +62,17 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) (types.Hash,
 
 	nonce := uint32(accountInfo.Nonce)
 	o := types.SignatureOptions{
-		BlockHash:          genesisHash,
-		Era:                types.ExtrinsicEra{IsMortalEra: false},
-		GenesisHash:        genesisHash,
-		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
-		SpecVersion:        rv.SpecVersion,
-		Tip:                types.NewUCompactFromUInt(0),
-		AppID:              types.NewUCompactFromUInt(uint64(appID)),
+		BlockHash:   genesisHash,
+		Era:         types.ExtrinsicEra{IsMortalEra: false},
+		GenesisHash: genesisHash,
+		Nonce:       types.NewUCompactFromUInt(uint64(nonce)),
+		SpecVersion: rv.SpecVersion,
+		Tip:         types.NewUCompactFromUInt(0),
+		AppID:       types.NewUCompactFromUInt(uint64(appID)),
+		//AppID:       types.NewU32(uint32(appID)),
+		//AppID:     types.U32(types.NewI16(int16(appID))),
+		//AppID:     types.U32(uint32(appID)),
+		//AppID:     types.U32(types.NewU16(uint16(appID))),
 		TransactionVersion: rv.TransactionVersion,
 	}
 

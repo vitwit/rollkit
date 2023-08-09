@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	ds "github.com/ipfs/go-datastore"
 	"github.com/rollkit/rollkit/da"
@@ -36,8 +37,8 @@ type Confidence struct {
 }
 
 type AppData struct {
-	Block      uint32 `json:"block"`
-	Extrinsics string `json:"extrinsics"`
+	Block      uint32   `json:"block"`
+	Extrinsics []string `json:"extrinsics"`
 }
 
 var _ da.DataAvailabilityLayerClient = &DataAvailabilityLayerClient{}
@@ -154,8 +155,7 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
 
-	blocks := make([]*types.Block, 1)
-	blocks[0] = new(types.Block)
+	blocks := []*types.Block{}
 
 	blockNumber := dataLayerHeight
 	appDataURL := fmt.Sprintf(c.config.BaseURL+"/appdata/%d?decode=true", blockNumber)
@@ -187,11 +187,34 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+
+	txnsByteArray := []byte{}
+	for _, extrinsic := range appDataObject.Extrinsics {
+		txnsByteArray = append(txnsByteArray, []byte(extrinsic)...)
+	}
+
+	block := &types.Block{
+		SignedHeader: types.SignedHeader{
+			Header: types.Header{
+				BaseHeader: types.BaseHeader{
+					Height: blockNumber,
+				},
+				AggregatorsHash: make([]byte, 32),
+			}},
+		Data: types.Data{
+			Txs: types.Txs{txnsByteArray},
+			IntermediateStateRoots: types.IntermediateStateRoots{
+				RawRootsList: nil,
+			},
+		},
+	}
+	blocks = append(blocks, block)
+
 	return da.ResultRetrieveBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
 			DAHeight: uint64(appDataObject.Block),
-			Message:  "block data: " + appDataObject.Extrinsics,
+			Message:  "block data: " + strings.Join(appDataObject.Extrinsics, " "),
 		},
 		Blocks: blocks,
 	}
