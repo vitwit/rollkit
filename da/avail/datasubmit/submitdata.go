@@ -1,6 +1,8 @@
 package datasubmit
 
 import (
+	"errors"
+
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -19,6 +21,7 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) (types.Hash,
 	}
 
 	// if app id is greater than 0 then it must be created before submitting data
+	err = errors.New("AppID can be 0")
 	if appID == 0 {
 		return types.Hash{}, err
 	}
