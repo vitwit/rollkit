@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	ds "github.com/ipfs/go-datastore"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/types"
 
 	"github.com/rollkit/rollkit/state/indexer"
 	"github.com/rollkit/rollkit/state/txindex"
@@ -300,7 +301,7 @@ func lookForHash(conditions []query.Condition) (hash []byte, ok bool, err error)
 func lookForHeight(conditions []query.Condition) (height int64) {
 	for _, c := range conditions {
 		if c.CompositeKey == types.TxHeightKey && c.Op == query.OpEqual {
-			return c.Operand.(int64)
+			return c.Operand.(*big.Int).Int64()
 		}
 	}
 	return 0
@@ -480,18 +481,18 @@ LOOP:
 			continue
 		}
 
-		if _, ok := qr.AnyBound().(int64); ok {
+		if _, ok := qr.AnyBound().(*big.Int); ok {
 			v, err := strconv.ParseInt(extractValueFromKey([]byte(result.Entry.Key)), 10, 64)
 			if err != nil {
 				continue LOOP
 			}
 
 			include := true
-			if lowerBound != nil && v < lowerBound.(int64) {
+			if lowerBound != nil && v < lowerBound.(*big.Int).Int64() {
 				include = false
 			}
 
-			if upperBound != nil && v > upperBound.(int64) {
+			if upperBound != nil && v > upperBound.(*big.Int).Int64() {
 				include = false
 			}
 
@@ -565,7 +566,7 @@ func extractValueFromKey(key []byte) string {
 	return parts[2]
 }
 
-func keyForEvent(key string, value []byte, result *abci.TxResult) string {
+func keyForEvent(key string, value string, result *abci.TxResult) string {
 	return fmt.Sprintf("%s/%s/%d/%d",
 		key,
 		value,

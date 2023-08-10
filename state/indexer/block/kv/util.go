@@ -3,12 +3,12 @@ package kv
 import (
 	"encoding/binary"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 
-	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/types"
-
+	"github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/types"
 	"github.com/rollkit/rollkit/store"
 )
 
@@ -58,7 +58,7 @@ func parseValueFromEventKey(key string) string {
 func lookForHeight(conditions []query.Condition) (int64, bool) {
 	for _, c := range conditions {
 		if c.CompositeKey == types.BlockHeightKey && c.Op == query.OpEqual {
-			return c.Operand.(int64), true
+			return c.Operand.(*big.Int).Int64(), true
 		}
 	}
 
