@@ -2,7 +2,6 @@ package avail
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -72,36 +71,38 @@ func (c *DataAvailabilityLayerClient) Stop() error {
 }
 
 // SubmitBlock submits a block to DA layer.
-func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *types.Block) da.ResultSubmitBlock {
+func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks []*types.Block) da.ResultSubmitBlocks {
 
-	data, err := block.MarshalBinary()
-	if err != nil {
-		return da.ResultSubmitBlock{
-			BaseResult: da.BaseResult{
-				Code:    da.StatusError,
-				Message: err.Error(),
-			},
+	for _, block := range blocks {
+		data, err := block.MarshalBinary()
+		if err != nil {
+			return da.ResultSubmitBlocks{
+				BaseResult: da.BaseResult{
+					Code:    da.StatusError,
+					Message: err.Error(),
+				},
+			}
+		}
+		err = datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
+
+		if err != nil {
+			return da.ResultSubmitBlocks{
+				BaseResult: da.BaseResult{
+					Code:    da.StatusError,
+					Message: err.Error(),
+				},
+			}
 		}
 	}
 
-	txHash, err := datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
-
-	if err != nil {
-		return da.ResultSubmitBlock{
-			BaseResult: da.BaseResult{
-				Code:    da.StatusError,
-				Message: err.Error(),
-			},
-		}
-	}
-
-	return da.ResultSubmitBlock{
+	return da.ResultSubmitBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
-			Message:  "tx hash: " + hex.EncodeToString(txHash[:]),
+			Message:  "data submitted succesfully",
 			DAHeight: 1,
 		},
 	}
+
 }
 
 // CheckBlockAvailability queries DA layer to check data availability of block.
