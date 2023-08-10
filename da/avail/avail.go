@@ -2,11 +2,11 @@ package avail
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	ds "github.com/ipfs/go-datastore"
 	"github.com/rollkit/rollkit/da"
@@ -36,8 +36,8 @@ type Confidence struct {
 }
 
 type AppData struct {
-	Block      uint32 `json:"block"`
-	Extrinsics string `json:"extrinsics"`
+	Block      uint32   `json:"block"`
+	Extrinsics []string `json:"extrinsics"`
 }
 
 var _ da.DataAvailabilityLayerClient = &DataAvailabilityLayerClient{}
@@ -71,36 +71,38 @@ func (c *DataAvailabilityLayerClient) Stop() error {
 }
 
 // SubmitBlock submits a block to DA layer.
-func (c *DataAvailabilityLayerClient) SubmitBlock(ctx context.Context, block *types.Block) da.ResultSubmitBlock {
+func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks []*types.Block) da.ResultSubmitBlocks {
 
-	data, err := block.MarshalBinary()
-	if err != nil {
-		return da.ResultSubmitBlock{
-			BaseResult: da.BaseResult{
-				Code:    da.StatusError,
-				Message: err.Error(),
-			},
+	for _, block := range blocks {
+		data, err := block.MarshalBinary()
+		if err != nil {
+			return da.ResultSubmitBlocks{
+				BaseResult: da.BaseResult{
+					Code:    da.StatusError,
+					Message: err.Error(),
+				},
+			}
+		}
+		err = datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
+
+		if err != nil {
+			return da.ResultSubmitBlocks{
+				BaseResult: da.BaseResult{
+					Code:    da.StatusError,
+					Message: err.Error(),
+				},
+			}
 		}
 	}
 
-	txHash, err := datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
-
-	if err != nil {
-		return da.ResultSubmitBlock{
-			BaseResult: da.BaseResult{
-				Code:    da.StatusError,
-				Message: err.Error(),
-			},
-		}
-	}
-
-	return da.ResultSubmitBlock{
+	return da.ResultSubmitBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
-			Message:  "tx hash: " + hex.EncodeToString(txHash[:]),
+			Message:  "data submitted succesfully",
 			DAHeight: 1,
 		},
 	}
+
 }
 
 // CheckBlockAvailability queries DA layer to check data availability of block.
@@ -154,11 +156,12 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
 
-	blocks := make([]*types.Block, 1)
-	blocks[0] = new(types.Block)
+	blocks := []*types.Block{}
 
 	blockNumber := dataLayerHeight
+
 	appDataURL := fmt.Sprintf(c.config.BaseURL+"/appdata/%d?decode=true", blockNumber)
+
 	response, err := http.Get(appDataURL)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
@@ -168,6 +171,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
@@ -177,6 +181,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+
 	var appDataObject AppData
 	err = json.Unmarshal(responseData, &appDataObject)
 	if err != nil {
@@ -187,11 +192,35 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+
+	txnsByteArray := []byte{}
+	for _, extrinsic := range appDataObject.Extrinsics {
+		txnsByteArray = append(txnsByteArray, []byte(extrinsic)...)
+	}
+
+	block := &types.Block{
+		SignedHeader: types.SignedHeader{
+			Header: types.Header{
+				BaseHeader: types.BaseHeader{
+					Height: blockNumber,
+				},
+				AggregatorsHash: make([]byte, 32),
+			}},
+		Data: types.Data{
+			Txs: types.Txs{txnsByteArray},
+			IntermediateStateRoots: types.IntermediateStateRoots{
+				RawRootsList: nil,
+			},
+		},
+	}
+
+	blocks = append(blocks, block)
+
 	return da.ResultRetrieveBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
 			DAHeight: uint64(appDataObject.Block),
-			Message:  "block data: " + appDataObject.Extrinsics,
+			Message:  "block data: " + strings.Join(appDataObject.Extrinsics, " "),
 		},
 		Blocks: blocks,
 	}
