@@ -158,7 +158,9 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 	blocks := []*types.Block{}
 
 	blockNumber := dataLayerHeight
+
 	appDataURL := fmt.Sprintf(c.config.BaseURL+"/appdata/%d?decode=true", blockNumber)
+
 	response, err := http.Get(appDataURL)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
@@ -168,6 +170,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
@@ -177,6 +180,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+
 	var appDataObject AppData
 	err = json.Unmarshal(responseData, &appDataObject)
 	if err != nil {
@@ -208,6 +212,7 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		},
 	}
+
 	blocks = append(blocks, block)
 
 	return da.ResultRetrieveBlocks{
