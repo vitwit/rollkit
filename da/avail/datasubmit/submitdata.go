@@ -10,6 +10,12 @@ import (
 
 // submit data submits the extrinsic through substrate api
 func SubmitData(apiURL string, seed string, appID int, data []byte) error {
+
+	// if app id is greater than 0 then it must be created before submitting data
+	if appID == 0 {
+		return errors.New("AppID cant be 0")
+	}
+
 	api, err := gsrpc.NewSubstrateAPI(apiURL)
 	if err != nil {
 		return err
@@ -20,18 +26,12 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 		return err
 	}
 
-	// if app id is greater than 0 then it must be created before submitting data
-	err = errors.New("AppID can be 0")
-	if appID == 0 {
-		return err
-	}
-
 	c, err := types.NewCall(meta, "DataAvailability.submit_data", data)
 	if err != nil {
 		return err
 	}
 
-	//Create the extrinsic
+	// Create the extrinsic
 	ext := types.NewExtrinsic(c)
 
 	genesisHash, err := api.RPC.Chain.GetBlockHash(0)
@@ -57,11 +57,11 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 	var accountInfo types.AccountInfo
 	ok, err := api.RPC.State.GetStorageLatest(key, &accountInfo)
 	if err != nil || !ok {
-		return err
+		return errors.New("failed to get the latest storage")
 	}
 
 	nonce := uint32(accountInfo.Nonce)
-	o := types.SignatureOptions{
+	signOptions := types.SignatureOptions{
 		BlockHash:          genesisHash,
 		Era:                types.ExtrinsicEra{IsMortalEra: false},
 		GenesisHash:        genesisHash,
@@ -73,7 +73,7 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 	}
 
 	// Sign the transaction using Alice's default account
-	err = ext.Sign(keyringPair, o)
+	err = ext.Sign(keyringPair, signOptions)
 	if err != nil {
 		return err
 	}
@@ -85,5 +85,4 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 	}
 
 	return nil
-
 }
