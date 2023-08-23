@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -20,13 +20,13 @@ type Config struct {
 	Seed       string  `json:"seed"`
 	ApiURL     string  `json:"api_url"`
 	AppID      int     `json:"app_id"`
-	confidence float64 `json:"confidence"`
+	Confidence float64 `json:"confidence"`
 }
 
 type DataAvailabilityLayerClient struct {
-	namespace types.NamespaceID
-	config    Config
-	logger    log.Logger
+	_      types.NamespaceID
+	config Config
+	logger log.Logger
 }
 
 type Confidence struct {
@@ -44,7 +44,7 @@ var _ da.DataAvailabilityLayerClient = &DataAvailabilityLayerClient{}
 var _ da.BlockRetriever = &DataAvailabilityLayerClient{}
 
 // Init initializes DataAvailabilityLayerClient instance.
-func (c *DataAvailabilityLayerClient) Init(namespaceID types.NamespaceID, config []byte, kvStore ds.Datastore, logger log.Logger) error {
+func (c *DataAvailabilityLayerClient) Init(_ types.NamespaceID, config []byte, kvStore ds.Datastore, logger log.Logger) error {
 	c.logger = logger
 
 	if len(config) > 0 {
@@ -98,7 +98,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 	return da.ResultSubmitBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
-			Message:  "data submitted succesfully",
+			Message:  "data submitted successfully",
 			DAHeight: 1,
 		},
 	}
@@ -112,7 +112,6 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 	confidenceURL := fmt.Sprintf(c.config.BaseURL+"/confidence/%d", blockNumber)
 
 	response, err := http.Get(confidenceURL)
-
 	if err != nil {
 		return da.ResultCheckBlock{
 			BaseResult: da.BaseResult{
@@ -121,8 +120,9 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 			},
 		}
 	}
+	defer response.Body.Close()
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return da.ResultCheckBlock{
 			BaseResult: da.BaseResult{
@@ -148,11 +148,11 @@ func (c *DataAvailabilityLayerClient) CheckBlockAvailability(ctx context.Context
 			Code:     da.StatusSuccess,
 			DAHeight: uint64(confidenceObject.Block),
 		},
-		DataAvailable: confidenceObject.Confidence > float64(c.config.confidence),
+		DataAvailable: confidenceObject.Confidence > float64(c.config.Confidence),
 	}
 }
 
-//RetrieveBlocks gets the block from DA layer.
+// RetrieveBlocks gets the block from DA layer.
 
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
 
@@ -171,8 +171,9 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 			},
 		}
 	}
+	defer response.Body.Close()
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
 			BaseResult: da.BaseResult{
