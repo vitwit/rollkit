@@ -33,7 +33,6 @@ var (
 	testNamespaceID = types.NamespaceID{0, 1, 2, 3, 4, 5, 6, 7}
 
 	testConfig = celestia.Config{
-		BaseURL:  "http://localhost:26658",
 		Timeout:  30 * time.Second,
 		GasLimit: 3000000,
 	}
@@ -119,16 +118,12 @@ func startMockGRPCServ() *grpc.Server {
 
 func startMockCelestiaNodeServer() *cmock.Server {
 	httpSrv := cmock.NewServer(mockDaBlockTime, cmlog.NewTMLogger(os.Stdout))
-	l, err := net.Listen("tcp4", "127.0.0.1:26658")
-	if err != nil {
-		fmt.Println("failed to create listener for mock celestia-node RPC server, error: %w", err)
-		return nil
-	}
-	err = httpSrv.Start(l)
+	url, err := httpSrv.Start()
 	if err != nil {
 		fmt.Println("can't start mock celestia-node RPC server")
 		return nil
 	}
+	testConfig.BaseURL = url
 	return httpSrv
 }
 
