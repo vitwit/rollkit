@@ -1,20 +1,18 @@
 package mock
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
 	mux2 "github.com/gorilla/mux"
 
 	"github.com/rollkit/celestia-openrpc/types/blob"
 	"github.com/rollkit/celestia-openrpc/types/header"
-	"github.com/rollkit/celestia-openrpc/types/sdk"
 	mockda "github.com/rollkit/rollkit/da/mock"
 	"github.com/rollkit/rollkit/log"
 	"github.com/rollkit/rollkit/store"
@@ -55,7 +53,7 @@ type response struct {
 type Server struct {
 	mock      *mockda.DataAvailabilityLayerClient
 	blockTime time.Duration
-	server    *http.Server
+	server    *httptest.Server
 	logger    log.Logger
 }
 
@@ -69,33 +67,27 @@ func NewServer(blockTime time.Duration, logger log.Logger) *Server {
 }
 
 // Start starts HTTP server with given listener.
-func (s *Server) Start(listener net.Listener) error {
+func (s *Server) Start() (string, error) {
 	kvStore, err := store.NewDefaultInMemoryKVStore()
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = s.mock.Init([8]byte{}, []byte(s.blockTime.String()), kvStore, s.logger)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = s.mock.Start()
 	if err != nil {
-		return err
+		return "", err
 	}
-	go func() {
-		s.server = new(http.Server)
-		s.server.Handler = s.getHandler()
-		err := s.server.Serve(listener)
-		s.logger.Debug("http server exited with", "error", err)
-	}()
-	return nil
+	s.server = httptest.NewServer(s.getHandler())
+	s.logger.Debug("http server exited with", "error", err)
+	return s.server.URL, nil
 }
 
 // Stop shuts down the Server.
 func (s *Server) Stop() {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	_ = s.server.Shutdown(ctx)
+	s.server.Close()
 }
 
 func (s *Server) getHandler() http.Handler {
@@ -197,20 +189,20 @@ func (s *Server) rpc(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.writeResponse(w, bytes)
-	case "state.SubmitPayForBlob":
+	case "blob.Submit":
 		var params []interface{}
 		err := json.Unmarshal(req.Params, &params)
 		if err != nil {
 			s.writeError(w, err)
 			return
 		}
-		if len(params) != 3 {
-			s.writeError(w, errors.New("expected 3 params: fee (uint64), gaslimit (uint64), data (base64 string)"))
+		if len(params) != 1 {
+			s.writeError(w, errors.New("expected 1 param: data (base64 string)"))
 			return
 		}
 
-		blocks := make([]*types.Block, len(params[2].([]interface{})))
-		for i, data := range params[2].([]interface{}) {
+		blocks := make([]*types.Block, len(params[0].([]interface{})))
+		for i, data := range params[0].([]interface{}) {
 			blockBase64 := data.(map[string]interface{})["data"].(string)
 			blockData, err := base64.StdEncoding.DecodeString(blockBase64)
 			if err != nil {
@@ -228,11 +220,9 @@ func (s *Server) rpc(w http.ResponseWriter, r *http.Request) {
 		res := s.mock.SubmitBlocks(r.Context(), blocks)
 		resp := &response{
 			Jsonrpc: "2.0",
-			Result: &sdk.TxResponse{
-				Height: int64(res.DAHeight),
-			},
-			ID:    req.ID,
-			Error: nil,
+			Result:  int64(res.DAHeight),
+			ID:      req.ID,
+			Error:   nil,
 		}
 		bytes, err := json.Marshal(resp)
 		if err != nil {

@@ -3,10 +3,9 @@ module github.com/rollkit/rollkit
 go 1.20
 
 require (
-	cosmossdk.io/math v1.0.1
-	github.com/celestiaorg/go-header v0.2.12
-	github.com/celestiaorg/nmt v0.17.0
-	github.com/celestiaorg/rsmt2d v0.9.0
+	github.com/celestiaorg/go-header v0.2.13
+	github.com/celestiaorg/nmt v0.18.1
+	github.com/celestiaorg/rsmt2d v0.10.0
 	github.com/celestiaorg/utils v0.1.0
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.12
 	github.com/cometbft/cometbft v0.37.2
@@ -25,7 +24,7 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.9.3
 	github.com/multiformats/go-multiaddr v0.10.1
 	github.com/prometheus/client_golang v1.16.0
-	github.com/rollkit/celestia-openrpc v0.1.1
+	github.com/rollkit/celestia-openrpc v0.1.2
 	github.com/rs/cors v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
@@ -33,12 +32,13 @@ require (
 	github.com/tendermint/tendermint v0.35.9
 	go.uber.org/multierr v1.11.0
 	golang.org/x/net v0.14.0
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.56.1
 	google.golang.org/protobuf v1.31.0
 // github.com/chandiniv1/go-substrate-rpc-client/v4 dfd1152c8eca19e7090112c105770db21149e3cf
 )
 
 require (
+	cosmossdk.io/math v1.0.1 // indirect
 	github.com/ChainSafe/go-schnorrkel v1.0.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -53,7 +53,7 @@ require (
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
-	github.com/cosmos/gogoproto v1.4.1 // indirect
+	github.com/cosmos/gogoproto v1.4.10 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
@@ -85,6 +85,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/flatbuffers v1.12.1 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20230405160723-4a4c7d95572b // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -148,7 +149,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
-	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
+	github.com/petermattis/goid v0.0.0-20230317030725-371a4b8eda08 // indirect
 	github.com/pierrec/xxHash v0.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

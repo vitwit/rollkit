@@ -142,7 +142,7 @@ func RandEDS(size int) (*rsmt2d.ExtendedDataSquare, error) {
 		return nil, err
 	}
 	// recompute the eds
-	return rsmt2d.ComputeExtendedDataSquare(shares, share.DefaultRSMT2DCodec(), NewConstructor(uint64(size)))
+	return rsmt2d.ComputeExtendedDataSquare(share.ToBytes(shares), share.DefaultRSMT2DCodec(), NewConstructor(uint64(size)))
 }
 
 // RandShares generate 'total' amount of shares filled with random data. It uses require.TestingT
@@ -152,7 +152,7 @@ func RandShares(total int) ([]share.Share, error) {
 		return nil, fmt.Errorf("total must be power of 2: %d", total)
 	}
 
-	var r = rand.New(rand.NewSource(time.Now().Unix())) //nolint:gosec
+	var r = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
 	shares := make([]share.Share, total)
 	for i := range shares {
 		shr := make([]byte, appconsts.ShareSize)
@@ -161,16 +161,20 @@ func RandShares(total int) ([]share.Share, error) {
 		if err != nil {
 			return nil, err
 		}
-		shares[i] = shr
+		share, err := share.NewShare(shr)
+		if err != nil {
+			return nil, err
+		}
+		shares[i] = *share
 	}
-	sort.Slice(shares, func(i, j int) bool { return bytes.Compare(shares[i], shares[j]) < 0 })
+	sort.Slice(shares, func(i, j int) bool { return bytes.Compare(shares[i].ToBytes(), shares[j].ToBytes()) < 0 })
 
 	return shares, nil
 }
 
 // RandNamespace generates random valid data namespace for testing purposes.
 func RandNamespace() share.Namespace {
-	var r = rand.New(rand.NewSource(time.Now().Unix())) //nolint:gosec
+	var r = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
 	rb := make([]byte, namespace.NamespaceVersionZeroIDSize)
 	r.Read(rb) // nolint:gosec
 	for {
