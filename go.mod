@@ -34,7 +34,6 @@ require (
 	golang.org/x/net v0.14.0
 	google.golang.org/grpc v1.56.1
 	google.golang.org/protobuf v1.31.0
-// github.com/chandiniv1/go-substrate-rpc-client/v4 dfd1152c8eca19e7090112c105770db21149e3cf
 )
 
 require (

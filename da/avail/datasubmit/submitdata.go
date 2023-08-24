@@ -72,7 +72,7 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 		TransactionVersion: rv.TransactionVersion,
 	}
 
-	// Sign the transaction using Alice's default account
+	// Sign the transaction
 	err = ext.Sign(keyringPair, signOptions)
 	if err != nil {
 		return err
