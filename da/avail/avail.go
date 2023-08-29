@@ -160,13 +160,9 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 				BaseHeader: types.BaseHeader{
 					Height: blockNumber,
 				},
-				AggregatorsHash: make([]byte, 32),
 			}},
 		Data: types.Data{
 			Txs: types.Txs{txnsByteArray},
-			IntermediateStateRoots: types.IntermediateStateRoots{
-				RawRootsList: nil,
-			},
 		},
 	}
 
