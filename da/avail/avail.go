@@ -99,7 +99,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 	return da.ResultSubmitBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
-			Message:  "data submitted successfully",
+			Message:  "success",
 			DAHeight: 1,
 		},
 	}
@@ -107,7 +107,6 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 }
 
 // RetrieveBlocks gets the block from DA layer.
-
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
 
 	blocks := []*types.Block{}
@@ -150,8 +149,7 @@ Loop:
 		goto Loop
 
 	} else {
-		err = json.Unmarshal(responseData, &appDataObject)
-		if err != nil {
+		if err = json.Unmarshal(responseData, &appDataObject); err != nil {
 			return da.ResultRetrieveBlocks{
 				BaseResult: da.BaseResult{
 					Code:    da.StatusError,
