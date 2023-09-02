@@ -12,7 +12,7 @@ import (
 func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 
 	// if app id is greater than 0 then it must be created before submitting data
-	if appID == 0 {
+	if appID < 1 {
 		return errors.New("AppID cant be 0")
 	}
 

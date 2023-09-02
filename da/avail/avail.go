@@ -14,6 +14,7 @@ import (
 	"github.com/rollkit/rollkit/types"
 )
 
+// Config stores Avail DALC configuration parameters.
 type Config struct {
 	BaseURL    string  `json:"base_url"`
 	Seed       string  `json:"seed"`
@@ -28,12 +29,14 @@ type DataAvailabilityLayerClient struct {
 	logger log.Logger
 }
 
+// Confidence stores block params retireved from Avail Light Node
 type Confidence struct {
 	Block                uint32  `json:"block"`
 	Confidence           float64 `json:"confidence"`
 	SerialisedConfidence *string `json:"serialised_confidence,omitempty"`
 }
 
+// AppData stores Extrinsics retrieved from Avail Light Node
 type AppData struct {
 	Block      uint32   `json:"block"`
 	Extrinsics []string `json:"extrinsics"`
@@ -56,7 +59,7 @@ func (c *DataAvailabilityLayerClient) Init(_ types.NamespaceID, config []byte, k
 // Start prepares DataAvailabilityLayerClient to work.
 func (c *DataAvailabilityLayerClient) Start() error {
 
-	c.logger.Info("starting avail Data Availability Layer Client", "baseURL", c.config.ApiURL)
+	c.logger.Info("starting avail data availability layer client", "baseURL", c.config.ApiURL)
 
 	return nil
 }
@@ -64,7 +67,7 @@ func (c *DataAvailabilityLayerClient) Start() error {
 // Stop stops DataAvailabilityLayerClient.
 func (c *DataAvailabilityLayerClient) Stop() error {
 
-	c.logger.Info("stopping Avail Data Availability Layer Client")
+	c.logger.Info("stopping avail data availability layer client")
 
 	return nil
 }
@@ -82,9 +85,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 				},
 			}
 		}
-		err = datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
-
-		if err != nil {
+		if err := datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data); err != nil {
 			return da.ResultSubmitBlocks{
 				BaseResult: da.BaseResult{
 					Code:    da.StatusError,
@@ -92,6 +93,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 				},
 			}
 		}
+
 	}
 
 	return da.ResultSubmitBlocks{
@@ -170,13 +172,9 @@ Loop:
 				BaseHeader: types.BaseHeader{
 					Height: blockNumber,
 				},
-				AggregatorsHash: make([]byte, 32),
 			}},
 		Data: types.Data{
 			Txs: types.Txs{txnsByteArray},
-			IntermediateStateRoots: types.IntermediateStateRoots{
-				RawRootsList: nil,
-			},
 		},
 	}
 
