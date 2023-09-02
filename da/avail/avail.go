@@ -29,14 +29,14 @@ type DataAvailabilityLayerClient struct {
 	logger log.Logger
 }
 
-// Confidence stores block params retireved from Avail Light Node
+// Confidence stores block params retireved from Avail Light Node Endpoint
 type Confidence struct {
 	Block                uint32  `json:"block"`
 	Confidence           float64 `json:"confidence"`
 	SerialisedConfidence *string `json:"serialised_confidence,omitempty"`
 }
 
-// AppData stores Extrinsics retrieved from Avail Light Node
+// AppData stores Extrinsics retrieved from Avail Light Node Endpoint
 type AppData struct {
 	Block      uint32   `json:"block"`
 	Extrinsics []string `json:"extrinsics"`
