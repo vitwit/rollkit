@@ -29,6 +29,7 @@ type Config struct {
 	Confidence float64 `json:"confidence"`
 }
 
+// DataAvailabilityLayerClient uses Avail-Node configuration parameters
 type DataAvailabilityLayerClient struct {
 	_      types.NamespaceID
 	config Config
