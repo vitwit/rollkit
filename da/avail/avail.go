@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	ds "github.com/ipfs/go-datastore"
+
 	"github.com/rollkit/rollkit/da"
 	"github.com/rollkit/rollkit/da/avail/datasubmit"
 	"github.com/rollkit/rollkit/log"
