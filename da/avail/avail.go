@@ -24,7 +24,7 @@ type Config struct {
 	BaseURL    string  `json:"base_url"`
 	Seed       string  `json:"seed"`
 	ApiURL     string  `json:"api_url"`
-	AppDataURL string  `json:app_data_url`
+	AppDataURL string  `json:"app_data_url"`
 	AppID      int     `json:"app_id"`
 	Confidence float64 `json:"confidence"`
 }
