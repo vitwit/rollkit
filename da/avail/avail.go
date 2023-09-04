@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	ds "github.com/ipfs/go-datastore"
 	"github.com/rollkit/rollkit/da"
@@ -14,11 +15,15 @@ import (
 	"github.com/rollkit/rollkit/types"
 )
 
+const BLOCK_NOT_FOUND = "\"Not found\""
+const PROCESSING_BLOCK = "\"Processing block\""
+
 // Config stores Avail DALC configuration parameters.
 type Config struct {
 	BaseURL    string  `json:"base_url"`
 	Seed       string  `json:"seed"`
 	ApiURL     string  `json:"api_url"`
+	AppDataURL string  `json:appdata_url`
 	AppID      int     `json:"app_id"`
 	Confidence float64 `json:"confidence"`
 }
@@ -114,9 +119,33 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 Loop:
 	blockNumber := dataLayerHeight
 
-	appDataURL := fmt.Sprintf(c.config.BaseURL+"/appdata/%d?decode=true", blockNumber)
+	appDataURL := fmt.Sprintf(c.config.BaseURL+c.config.AppDataURL, blockNumber)
 
-	response, err := http.Get(appDataURL)
+	// Sanitize and validate the URL
+	parsedURL, err := url.Parse(appDataURL)
+	if err != nil {
+		return da.ResultRetrieveBlocks{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
+
+	// Create an HTTP request with the sanitized URL
+	req, err := http.NewRequest("GET", parsedURL.String(), nil)
+	if err != nil {
+		return da.ResultRetrieveBlocks{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
+
+	// Perform the HTTP request
+	client := http.DefaultClient
+	response, err := client.Do(req)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
 			BaseResult: da.BaseResult{
@@ -140,11 +169,11 @@ Loop:
 	}
 
 	var appDataObject AppData
-	if string(responseData) == "\"Not found\"" {
+	if string(responseData) == BLOCK_NOT_FOUND {
 
 		appDataObject = AppData{Block: uint32(blockNumber), Extrinsics: []string{}}
 
-	} else if string(responseData) == "\"Processing block\"" {
+	} else if string(responseData) == PROCESSING_BLOCK {
 
 		goto Loop
 
