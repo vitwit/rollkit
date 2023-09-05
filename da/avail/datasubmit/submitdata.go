@@ -12,7 +12,7 @@ import (
 func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 
 	// if app id is greater than 0 then it must be created before submitting data
-	if appID == 0 {
+	if appID < 1 {
 		return errors.New("AppID cant be 0")
 	}
 
@@ -72,7 +72,7 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 		TransactionVersion: rv.TransactionVersion,
 	}
 
-	// Sign the transaction using Alice's default account
+	// Sign the transaction
 	err = ext.Sign(keyringPair, signOptions)
 	if err != nil {
 		return err
@@ -85,5 +85,4 @@ func SubmitData(apiURL string, seed string, appID int, data []byte) error {
 	}
 
 	return nil
-
 }

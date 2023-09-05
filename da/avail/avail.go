@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
 
 	ds "github.com/ipfs/go-datastore"
 
@@ -16,26 +16,34 @@ import (
 	"github.com/rollkit/rollkit/types"
 )
 
+const BLOCK_NOT_FOUND = "\"Not found\""
+const PROCESSING_BLOCK = "\"Processing block\""
+
+// Config stores Avail DALC configuration parameters.
 type Config struct {
 	BaseURL    string  `json:"base_url"`
 	Seed       string  `json:"seed"`
 	ApiURL     string  `json:"api_url"`
+	AppDataURL string  `json:"app_data_url"`
 	AppID      int     `json:"app_id"`
 	Confidence float64 `json:"confidence"`
 }
 
+// DataAvailabilityLayerClient uses Avail-Node configuration parameters
 type DataAvailabilityLayerClient struct {
 	_      types.NamespaceID
 	config Config
 	logger log.Logger
 }
 
+// Confidence stores block params retireved from Avail Light Node Endpoint
 type Confidence struct {
 	Block                uint32  `json:"block"`
 	Confidence           float64 `json:"confidence"`
 	SerialisedConfidence *string `json:"serialised_confidence,omitempty"`
 }
 
+// AppData stores Extrinsics retrieved from Avail Light Node Endpoint
 type AppData struct {
 	Block      uint32   `json:"block"`
 	Extrinsics []string `json:"extrinsics"`
@@ -58,7 +66,7 @@ func (c *DataAvailabilityLayerClient) Init(_ types.NamespaceID, config []byte, k
 // Start prepares DataAvailabilityLayerClient to work.
 func (c *DataAvailabilityLayerClient) Start() error {
 
-	c.logger.Info("starting avail Data Availability Layer Client", "baseURL", c.config.ApiURL)
+	c.logger.Info("starting avail data availability layer client", "baseURL", c.config.ApiURL)
 
 	return nil
 }
@@ -66,7 +74,7 @@ func (c *DataAvailabilityLayerClient) Start() error {
 // Stop stops DataAvailabilityLayerClient.
 func (c *DataAvailabilityLayerClient) Stop() error {
 
-	c.logger.Info("stopping Avail Data Availability Layer Client")
+	c.logger.Info("stopping avail data availability layer client")
 
 	return nil
 }
@@ -84,9 +92,7 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 				},
 			}
 		}
-		err = datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data)
-
-		if err != nil {
+		if err := datasubmit.SubmitData(c.config.ApiURL, c.config.Seed, c.config.AppID, data); err != nil {
 			return da.ResultSubmitBlocks{
 				BaseResult: da.BaseResult{
 					Code:    da.StatusError,
@@ -94,12 +100,13 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 				},
 			}
 		}
+
 	}
 
 	return da.ResultSubmitBlocks{
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
-			Message:  "data submitted successfully",
+			Message:  "success",
 			DAHeight: 1,
 		},
 	}
@@ -107,16 +114,40 @@ func (c *DataAvailabilityLayerClient) SubmitBlocks(ctx context.Context, blocks [
 }
 
 // RetrieveBlocks gets the block from DA layer.
-
 func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLayerHeight uint64) da.ResultRetrieveBlocks {
 
 	blocks := []*types.Block{}
 
+Loop:
 	blockNumber := dataLayerHeight
 
-	appDataURL := fmt.Sprintf(c.config.BaseURL+"/appdata/%d?decode=true", blockNumber)
+	appDataURL := fmt.Sprintf(c.config.BaseURL+c.config.AppDataURL, blockNumber)
 
-	response, err := http.Get(appDataURL)
+	// Sanitize and validate the URL
+	parsedURL, err := url.Parse(appDataURL)
+	if err != nil {
+		return da.ResultRetrieveBlocks{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
+
+	// Create an HTTP request with the sanitized URL
+	req, err := http.NewRequest("GET", parsedURL.String(), nil)
+	if err != nil {
+		return da.ResultRetrieveBlocks{
+			BaseResult: da.BaseResult{
+				Code:    da.StatusError,
+				Message: err.Error(),
+			},
+		}
+	}
+
+	// Perform the HTTP request
+	client := http.DefaultClient
+	response, err := client.Do(req)
 	if err != nil {
 		return da.ResultRetrieveBlocks{
 			BaseResult: da.BaseResult{
@@ -140,13 +171,22 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 	}
 
 	var appDataObject AppData
-	err = json.Unmarshal(responseData, &appDataObject)
-	if err != nil {
-		return da.ResultRetrieveBlocks{
-			BaseResult: da.BaseResult{
-				Code:    da.StatusError,
-				Message: err.Error(),
-			},
+	if string(responseData) == BLOCK_NOT_FOUND {
+
+		appDataObject = AppData{Block: uint32(blockNumber), Extrinsics: []string{}}
+
+	} else if string(responseData) == PROCESSING_BLOCK {
+
+		goto Loop
+
+	} else {
+		if err = json.Unmarshal(responseData, &appDataObject); err != nil {
+			return da.ResultRetrieveBlocks{
+				BaseResult: da.BaseResult{
+					Code:    da.StatusError,
+					Message: err.Error(),
+				},
+			}
 		}
 	}
 
@@ -173,7 +213,6 @@ func (c *DataAvailabilityLayerClient) RetrieveBlocks(ctx context.Context, dataLa
 		BaseResult: da.BaseResult{
 			Code:     da.StatusSuccess,
 			DAHeight: uint64(appDataObject.Block),
-			Message:  "block data: " + strings.Join(appDataObject.Extrinsics, " "),
 		},
 		Blocks: blocks,
 	}

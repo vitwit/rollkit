@@ -201,9 +201,7 @@ require (
 )
 
 replace (
-	//github.com/centrifuge/go-substrate-rpc-client/v4 => /home/chandini/go/src/github.com/chandiniv1/go-substrate-rpc-client
-	github.com/centrifuge/go-substrate-rpc-client/v4 => github.com/chandiniv1/go-substrate-rpc-client/v4 v4.0.12-avail-1.5.0-4eb55aaa492.0.20230719142342-dfd1152c8eca
+	github.com/centrifuge/go-substrate-rpc-client/v4 => github.com/availproject/go-substrate-rpc-client/v4 v4.0.12-avail-1.6.2-rc1
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
-
 )
